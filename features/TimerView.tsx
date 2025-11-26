@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider } from '../components/ui';
@@ -266,6 +265,17 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
+      {/* Add global styles for the breathing animation */}
+      <style>{`
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.05); opacity: 0.6; }
+        }
+        .animate-breathe {
+          animation: breathe 6s ease-in-out infinite;
+        }
+      `}</style>
+
       <button 
         onClick={toggleZenMode}
         className={`
@@ -339,40 +349,36 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
          </div>
       </div>
 
-      {/* 2. CENTER SECTION: Timer */}
-      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'scale-110 flex-none relative' : 'flex-1 w-full'}`}>
+      {/* 2. CENTER SECTION: Hypnotic Timer */}
+      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'flex-none relative' : 'flex-1 w-full'}`}>
         <div className="relative group/timer">
             
-            <div className={`absolute inset-0 rounded-full blur-3xl opacity-40 transition-all duration-1000 ${isActive ? 'bg-[#d62828]/50 scale-110' : 'bg-slate-200 scale-90'}`} />
+            {/* Hypnotic Breathing Aura */}
+            <div 
+                className={`
+                    absolute inset-0 rounded-full blur-[60px] transition-all duration-1000 
+                    ${isActive ? 'bg-[#d62828] animate-breathe' : 'bg-slate-200 opacity-20 scale-90'}
+                `} 
+            />
 
-            <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 drop-shadow-2xl relative z-10">
-              <defs>
-                <radialGradient id="sphereGradient" cx="30%" cy="30%" r="70%">
-                    <stop offset="0%" stopColor="#ffffff" />
-                    <stop offset="100%" stopColor="#f1f5f9" />
-                </radialGradient>
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#d62828" />
-                  <stop offset="100%" stopColor="#ef4444" />
-                </linearGradient>
-                <filter id="innerShadow">
-                    <feOffset dx="0" dy="1" />
-                    <feGaussianBlur stdDeviation="1" result="offset-blur" />
-                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
-                    <feFlood floodColor="black" floodOpacity="0.1" result="color" />
-                    <feComposite operator="in" in="color" in2="inverse" result="shadow" />
-                    <feComposite operator="over" in="shadow" in2="SourceGraphic" /> 
-                </filter>
-              </defs>
+            <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 relative z-10">
               
-              <circle cx="170" cy="170" r={radius} fill="url(#sphereGradient)" className="drop-shadow-sm" />
-              <circle cx="170" cy="170" r={radius} stroke="#e2e8f0" strokeWidth="6" fill="transparent" filter="url(#innerShadow)" />
+              {/* Glassy Track */}
+              <circle 
+                cx="170" cy="170" r={radius} 
+                stroke="#e2e8f0" 
+                strokeWidth="2" 
+                fill="rgba(255,255,255,0.5)" 
+                className="backdrop-blur-sm"
+              />
+              
+              {/* Progress Ring with Solid Color */}
               <circle
                 cx="170"
                 cy="170"
                 r={radius}
-                stroke="url(#progressGradient)"
-                strokeWidth="6"
+                stroke="#d62828"
+                strokeWidth="4"
                 fill="transparent"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -382,7 +388,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
             </svg>
             
             <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
-              <div className={`p-3 rounded-full mb-4 transition-all duration-500 ${isActive ? 'bg-[#d62828]/5 text-[#d62828]' : 'bg-transparent text-slate-300'}`}>
+              <div className={`p-3 rounded-full mb-4 transition-all duration-500 ${isActive ? 'text-[#d62828] scale-110' : 'text-slate-300 scale-100'}`}>
                  <CurrentIcon className={`w-8 h-8 md:w-10 md:h-10 transition-colors duration-500`} />
               </div>
               
@@ -407,7 +413,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               ) : (
                 <div 
                   onClick={startEditing}
-                  className={`text-7xl md:text-8xl font-light tracking-tighter tabular-nums text-slate-800 cursor-pointer select-none transition-all hover:scale-105 active:scale-95 ${isActive ? 'pointer-events-none' : ''}`}
+                  className={`text-7xl md:text-8xl font-light tracking-tighter tabular-nums text-slate-800 cursor-pointer select-none transition-all hover:scale-105 active:scale-95 drop-shadow-sm ${isActive ? 'pointer-events-none' : ''}`}
                   title="Click to edit duration"
                 >
                   {formatTime(timeLeft)}
@@ -415,7 +421,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               )}
 
               {!isEditingTime && (
-                <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4">
+                <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4 transition-opacity duration-500">
                   {isActive 
                     ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : (mode === TimerMode.FOCUS ? t.timer.status.focusing : t.timer.status.resting)) 
                     : t.timer.status.ready}
