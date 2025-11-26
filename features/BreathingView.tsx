@@ -1,9 +1,30 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Wind, Heart, Box, ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
 import { Card, Badge } from '../components/ui';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BreathingPattern } from '../types';
+
+// MethodCard Component (Hoisted to top to prevent ReferenceError)
+const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
+    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
+        <div className="flex items-start gap-5">
+            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <Icon className="w-6 h-6" />
+            </div>
+            <div className="space-y-3">
+                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+                <p className="text-slate-600 leading-relaxed text-sm">
+                    {desc}
+                </p>
+                <div className="flex items-center gap-2 pt-2">
+                    <Badge color="red">{benefit}</Badge>
+                </div>
+            </div>
+        </div>
+    </Card>
+);
 
 // Patterns Definition
 const PATTERNS: BreathingPattern[] = [
@@ -80,25 +101,6 @@ export const BreathingView: React.FC = () => {
     </div>
   );
 };
-
-const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
-    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
-        <div className="flex items-start gap-5">
-            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
-                <Icon className="w-6 h-6" />
-            </div>
-            <div className="space-y-3">
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                    {desc}
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                    <Badge color="red">{benefit}</Badge>
-                </div>
-            </div>
-        </div>
-    </Card>
-);
 
 // --- VISUALIZER COMPONENT ---
 
@@ -255,7 +257,7 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
         <button 
             onClick={onClose}
             className={`
-                absolute top-4 left-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all duration-300 z-50
+                absolute top-4 left-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all duration-300 z-20
                 ${isZenMode && !isUserActive ? 'opacity-0' : 'opacity-100'}
             `}
             title="Back"
@@ -267,7 +269,7 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
         <button 
             onClick={toggleZenMode}
             className={`
-                absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50
+                absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-20
                 ${isZenMode ? `bg-white shadow-sm ${!isUserActive ? 'opacity-0' : 'opacity-100'}` : ''}
             `}
             title={isZenMode ? "Exit Fullscreen" : "Enter Fullscreen"}

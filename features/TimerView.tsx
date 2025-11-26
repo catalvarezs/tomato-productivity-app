@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2, CloudRain, Trees, Coffee, VolumeX } from 'lucide-react';
 import { Slider } from '../components/ui';
 import { TimerMode, Session, TimerTechnique, AmbientSoundType } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -25,11 +26,11 @@ const TECHNIQUES_CONFIG: Record<TimerTechnique, { config: Record<TimerMode, numb
   }
 };
 
-const SOUNDS: Record<AmbientSoundType, { label: string; url: string }> = {
-  NONE: { label: 'Off', url: '' },
-  RAIN: { label: 'Heavy Rain', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
-  FOREST: { label: 'Ocean Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg' },
-  CAFE: { label: 'Coffee Shop', url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg' }
+const SOUNDS: Record<AmbientSoundType, { label: string; url: string; icon: any }> = {
+  NONE: { label: 'Silent', url: '', icon: VolumeX },
+  RAIN: { label: 'Heavy Rain', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', icon: CloudRain },
+  FOREST: { label: 'Ocean Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg', icon: Trees },
+  CAFE: { label: 'Coffee Shop', url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', icon: Coffee }
 };
 
 export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
@@ -280,7 +281,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       )}
 
       {/* 1. TOP SECTION - Flexible Header */}
-      <div className={`flex-none flex flex-col items-center gap-4 w-full pt-6 pb-2 px-4 transition-all duration-500 z-40 ${isZenMode ? 'hidden' : 'flex'}`}>
+      <div className={`relative flex-none flex flex-col items-center gap-4 w-full pt-6 pb-2 px-4 transition-all duration-500 z-20 ${isZenMode ? 'hidden' : 'flex'}`}>
          
          <div className="flex bg-slate-100 p-1 rounded-2xl shadow-inner w-full max-w-sm">
             {(Object.values(TimerMode)).map((m) => (
@@ -298,7 +299,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
             ))}
          </div>
 
-         <div className="flex items-center gap-2 z-30">
+         <div className="flex items-center gap-2 z-20">
             <div className="relative">
                 <button 
                     onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
@@ -310,8 +311,8 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
                 {showTechniqueMenu && (
                     <>
-                    <div className="fixed inset-0 z-30" onClick={() => setShowTechniqueMenu(false)} />
-                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
+                    <div className="fixed inset-0 z-20" onClick={() => setShowTechniqueMenu(false)} />
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-30">
                     <div className="absolute left-1/2 -translate-x-1/2 w-full">
                         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
                             {Object.keys(TECHNIQUES_CONFIG).map((key) => {
@@ -446,7 +447,13 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               <div className="relative">
                   <button 
                     onClick={() => setShowSoundControls(!showSoundControls)}
-                    className={`flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 shadow-sm ${selectedSound !== 'NONE' ? 'text-[#d62828] border-[#d62828]/20 bg-[#d62828]/10' : ''}`}
+                    className={`
+                        flex items-center justify-center w-14 h-14 rounded-full bg-white border transition-all active:scale-95 shadow-sm
+                        ${selectedSound !== 'NONE'
+                            ? 'border-[#d62828]/20 text-[#d62828]' 
+                            : 'border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200'
+                        }
+                    `}
                     title={t.timer.controls.sound}
                   >
                     <Music2 className="w-5 h-5" />
@@ -458,21 +465,30 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       {/* Dropdown opens DOWNWARDS */}
                       <div ref={soundMenuRef} className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
                         <div className="absolute left-1/2 -translate-x-1/2 w-full">
-                          <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-top">
+                          <div className="bg-white/95 backdrop-blur-xl p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-top">
                             <div className="space-y-0.5 mb-3 p-1">
-                                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">{t.timer.controls.sound}</h4>
-                                {Object.entries(SOUNDS).map(([key, sound]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setSelectedSound(key as AmbientSoundType)}
-                                        className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                            selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                        }`}
-                                    >
-                                        {sound.label}
-                                        {selectedSound === key && <Volume2 className="w-4 h-4" />}
-                                    </button>
-                                ))}
+                                <div className="flex items-center justify-between mb-2 px-2">
+                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.timer.controls.sound}</h4>
+                                    <span className="text-[10px] font-bold text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded-md">{Math.round(volume * 100)}%</span>
+                                </div>
+                                {Object.entries(SOUNDS).map(([key, sound]) => {
+                                    const SoundIcon = sound.icon;
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => setSelectedSound(key as AmbientSoundType)}
+                                            className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                                selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <SoundIcon className="w-4 h-4 opacity-70" />
+                                                <span>{sound.label}</span>
+                                            </div>
+                                            {selectedSound === key && <Volume2 className="w-4 h-4" />}
+                                        </button>
+                                    );
+                                })}
                             </div>
                             <div className="px-3 pb-2 pt-1 border-t border-slate-50">
                                 <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />

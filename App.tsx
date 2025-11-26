@@ -88,8 +88,8 @@ export default function App() {
 
       {/* Sidebar Navigation - Responsive */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out w-64
-        md:relative md:translate-x-0
+        fixed inset-y-0 left-0 z-[200] bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out w-64
+        md:relative md:translate-x-0 md:z-auto
         ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
       `}>
         <div 
@@ -191,7 +191,7 @@ export default function App() {
       {/* Overlay for mobile menu */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[190] md:hidden animate-fade-in"
           onClick={closeMobileMenu}
         />
       )}
