@@ -225,24 +225,26 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                 <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowTechniqueMenu(false)} />
                 <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
-                  <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
-                    {Object.entries(TECHNIQUES).map(([key, tech]) => (
-                        <button
-                            key={key}
-                            onClick={() => {
-                                setTechnique(key as TimerTechnique);
-                                setShowTechniqueMenu(false);
-                            }}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                technique === key 
-                                ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
-                                : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            {tech.label}
-                            {technique === key && <CheckCircle2 className="w-4 h-4" />}
-                        </button>
-                    ))}
+                  <div className="absolute left-1/2 -translate-x-1/2 w-full">
+                      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
+                        {Object.entries(TECHNIQUES).map(([key, tech]) => (
+                            <button
+                                key={key}
+                                onClick={() => {
+                                    setTechnique(key as TimerTechnique);
+                                    setShowTechniqueMenu(false);
+                                }}
+                                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                    technique === key 
+                                    ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
+                                    : 'text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                {tech.label}
+                                {technique === key && <CheckCircle2 className="w-4 h-4" />}
+                            </button>
+                        ))}
+                      </div>
                   </div>
                 </div>
                 </>
@@ -295,28 +297,37 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               </div>
               
               {isEditingTime ? (
-                <form onSubmit={handleCustomTimeSubmit}>
+                <form onSubmit={handleCustomTimeSubmit} className="flex flex-col items-center w-full">
                   <input 
                       autoFocus
                       type="number"
+                      min="1"
+                      max="240"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => handleCustomTimeSubmit()}
-                      className="text-6xl md:text-8xl font-light w-48 text-center bg-transparent border-b-2 border-[#d62828]/30 focus:border-[#d62828] outline-none text-slate-800"
+                      className="text-7xl md:text-8xl font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] text-slate-800 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-[#d62828]/20"
+                      placeholder="25"
                   />
+                  <span className="text-xs font-semibold text-[#d62828] animate-fade-in mt-2 uppercase tracking-widest">
+                    Set Minutes & Press Enter
+                  </span>
                 </form>
               ) : (
                 <div 
                   onClick={startEditing}
-                  className={`text-7xl md:text-8xl font-light tracking-tighter tabular-nums text-slate-800 cursor-pointer select-none transition-all hover:scale-105 ${isActive ? 'pointer-events-none' : ''}`}
+                  className={`text-7xl md:text-8xl font-light tracking-tighter tabular-nums text-slate-800 cursor-pointer select-none transition-all hover:scale-105 active:scale-95 ${isActive ? 'pointer-events-none' : ''}`}
+                  title="Click to edit duration"
                 >
                   {formatTime(timeLeft)}
                 </div>
               )}
 
-              <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4">
-                {isActive ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : 'Focusing...') : (interruptions > 0 ? `${interruptions} interruption${interruptions > 1 ? 's' : ''}` : 'Ready')}
-              </p>
+              {!isEditingTime && (
+                <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4">
+                  {isActive ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : 'Focusing...') : (interruptions > 0 ? `${interruptions} interruption${interruptions > 1 ? 's' : ''}` : 'Ready')}
+                </p>
+              )}
             </div>
         </div>
       </div>
@@ -359,24 +370,26 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                   <>
                   <div className="fixed inset-0 z-30" onClick={() => setShowSoundControls(false)}/>
                   <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
-                    <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
-                      <div className="space-y-0.5 mb-3 p-1">
-                          <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Ambience</h4>
-                          {Object.entries(SOUNDS).map(([key, sound]) => (
-                              <button
-                                  key={key}
-                                  onClick={() => setSelectedSound(key as AmbientSoundType)}
-                                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                      selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                  }`}
-                              >
-                                  {sound.label}
-                                  {selectedSound === key && <Volume2 className="w-4 h-4" />}
-                              </button>
-                          ))}
-                      </div>
-                      <div className="px-3 pb-2 pt-1 border-t border-slate-50">
-                          <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
+                    <div className="absolute left-1/2 -translate-x-1/2 w-full">
+                      <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
+                        <div className="space-y-0.5 mb-3 p-1">
+                            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Ambience</h4>
+                            {Object.entries(SOUNDS).map(([key, sound]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setSelectedSound(key as AmbientSoundType)}
+                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                        selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {sound.label}
+                                    {selectedSound === key && <Volume2 className="w-4 h-4" />}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="px-3 pb-2 pt-1 border-t border-slate-50">
+                            <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
+                        </div>
                       </div>
                     </div>
                   </div>
