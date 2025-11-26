@@ -5,6 +5,26 @@ import { Card, Badge } from '../components/ui';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BreathingPattern } from '../types';
 
+// Helper Component defined before use to prevent ReferenceError
+const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
+    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
+        <div className="flex items-start gap-5">
+            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <Icon className="w-6 h-6" />
+            </div>
+            <div className="space-y-3">
+                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+                <p className="text-slate-600 leading-relaxed text-sm">
+                    {desc}
+                </p>
+                <div className="flex items-center gap-2 pt-2">
+                    <Badge color="red">{benefit}</Badge>
+                </div>
+            </div>
+        </div>
+    </Card>
+);
+
 // Patterns Definition
 const PATTERNS: BreathingPattern[] = [
   {
@@ -38,26 +58,6 @@ const PATTERNS: BreathingPattern[] = [
     holdOut: 0
   }
 ];
-
-// Helper Component defined before use to prevent ReferenceError
-const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
-    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
-        <div className="flex items-start gap-5">
-            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
-                <Icon className="w-6 h-6" />
-            </div>
-            <div className="space-y-3">
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                    {desc}
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                    <Badge color="red">{benefit}</Badge>
-                </div>
-            </div>
-        </div>
-    </Card>
-);
 
 export const BreathingView: React.FC = () => {
   const { t } = useLanguage();
@@ -291,7 +291,7 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
                 {/* Inset-10 creates buffer so blur doesn't clip */}
                 <div 
                     className={`
-                        absolute inset-10 rounded-full blur-[60px] bg-[#d62828] transition-all ease-in-out z-0
+                        absolute inset-10 rounded-full blur-[50px] bg-[#d62828] transition-all ease-in-out z-0
                     `}
                     style={{ 
                         transitionDuration: `${duration}s`,
