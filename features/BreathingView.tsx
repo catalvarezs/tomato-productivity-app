@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Wind, Heart, Box, ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
 import { Card, Badge } from '../components/ui';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -110,13 +110,27 @@ interface VisualizerProps {
 type Phase = 'inhale' | 'holdIn' | 'exhale' | 'holdOut';
 
 const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) => {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState<Phase>('inhale');
   const [isZenMode, setIsZenMode] = useState(false);
   const [isUserActive, setIsUserActive] = useState(true);
   
+  // Animation State
+  const [ringProgress, setRingProgress] = useState(0); // 0 = empty, 100 = full
+  const [duration, setDuration] = useState(0);
+  
   const timerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const activityTimeoutRef = useRef<number | null>(null);
+
+  // SVG Config (Identical to TimerView)
+  const radius = 120;
+  const circumference = 2 * Math.PI * radius;
+  
+  // Calculate stroke offset based on progress
+  // progress 0 -> offset = circumference (empty)
+  // progress 100 -> offset = 0 (full)
+  const strokeDashoffset = circumference - (ringProgress / 100) * circumference;
 
   // Native Fullscreen & Activity Tracker
   useEffect(() => {
@@ -175,128 +189,86 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
       }
   };
 
-  // Generate 3D Donut Point Cloud (Torus)
-  const particles = useMemo(() => {
-    const skipCenter = 150; // Larger hole for Donut shape
-    const numPoints = 800; // Increased density for 3D effect
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5)); 
-    const spread = 8; 
-    
-    return Array.from({ length: numPoints }).map((_, i) => {
-      const index = i + skipCenter;
-      
-      // Radius calculation
-      const dist = spread * Math.sqrt(index); 
-      const theta = index * goldenAngle;
-      
-      const cx = dist * Math.cos(theta);
-      const cy = dist * Math.sin(theta);
-      
-      // Size Gradient: Larger on outside
-      // Min size 2px, Max size 12px
-      const normalizedDist = (dist - (spread * Math.sqrt(skipCenter))) / (spread * Math.sqrt(numPoints + skipCenter));
-      const r = 2 + (normalizedDist * 10);
-      
-      // Opacity Gradient for 3D depth
-      const opacity = 0.2 + (normalizedDist * 0.8);
-
-      return { id: i, cx, cy, r, opacity };
-    });
-  }, []);
-
-  // Recursive function to handle phases and skip 0-duration ones
   const runPhase = (nextPhase: Phase) => {
-    let duration = 0;
-    let followingPhase: Phase = 'inhale';
+    let phaseDuration = 0;
+    let nextPhaseName: Phase = 'inhale';
+    let targetProgress = 0;
 
     switch (nextPhase) {
       case 'inhale':
-        duration = pattern.inhale;
-        followingPhase = 'holdIn';
+        phaseDuration = pattern.inhale;
+        nextPhaseName = 'holdIn';
+        targetProgress = 100; // Fill up
         break;
       case 'holdIn':
-        duration = pattern.holdIn;
-        followingPhase = 'exhale';
+        phaseDuration = pattern.holdIn;
+        nextPhaseName = 'exhale';
+        targetProgress = 100; // Stay full
         break;
       case 'exhale':
-        duration = pattern.exhale;
-        followingPhase = 'holdOut';
+        phaseDuration = pattern.exhale;
+        nextPhaseName = 'holdOut';
+        targetProgress = 0; // Empty
         break;
       case 'holdOut':
-        duration = pattern.holdOut;
-        followingPhase = 'inhale';
+        phaseDuration = pattern.holdOut;
+        nextPhaseName = 'inhale';
+        targetProgress = 0; // Stay empty
         break;
     }
 
-    // CRITICAL: If a phase has 0 duration (like holdIn in Coherence), skip it immediately
-    if (duration <= 0) {
-      runPhase(followingPhase);
+    // Skip 0 duration phases
+    if (phaseDuration <= 0) {
+      runPhase(nextPhaseName);
       return;
     }
 
     setPhase(nextPhase);
+    setDuration(phaseDuration);
+    
+    // Small delay to ensure CSS transition picks up the new duration
+    requestAnimationFrame(() => {
+        setRingProgress(targetProgress);
+    });
 
     timerRef.current = window.setTimeout(() => {
-        runPhase(followingPhase);
-    }, duration * 1000);
+        runPhase(nextPhaseName);
+    }, phaseDuration * 1000);
   };
 
   useEffect(() => {
-    runPhase('inhale');
+    // Initial start: Set to empty, then trigger inhale
+    setRingProgress(0);
+    setDuration(0);
+    
+    // Start loop
+    requestAnimationFrame(() => {
+        runPhase('inhale');
+    });
+
     return () => {
         if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
-  const getDynamicStyle = (): React.CSSProperties => {
-      const isExpanded = phase === 'inhale' || phase === 'holdIn';
-      
-      let duration = 0;
+  const getInstructionText = () => {
       switch(phase) {
-          case 'inhale': duration = pattern.inhale; break;
-          case 'holdIn': duration = pattern.holdIn; break;
-          case 'exhale': duration = pattern.exhale; break;
-          case 'holdOut': duration = pattern.holdOut; break;
+          case 'inhale': return t.breathing.instructions.inhale;
+          case 'holdIn': return t.breathing.instructions.hold;
+          case 'exhale': return t.breathing.instructions.exhale;
+          case 'holdOut': return t.breathing.instructions.hold;
       }
-
-      // We add a slight rotation drift to holds so it doesn't look frozen
-      let rotation = '0deg';
-      let scale = '1';
-
-      if (phase === 'inhale') {
-          rotation = '0deg';
-          scale = '1';
-      } else if (phase === 'holdIn') {
-          rotation = '5deg'; // Slow drift during hold
-          scale = '1';
-      } else if (phase === 'exhale') {
-          rotation = '90deg'; // Spiral close
-          scale = '0.45'; // Tight contraction
-      } else if (phase === 'holdOut') {
-          rotation = '100deg'; // Slow drift during hold empty
-          scale = '0.45';
-      }
-
-      return {
-        transitionProperty: 'transform',
-        transitionTimingFunction: 'cubic-bezier(0.4, 0.0, 0.2, 1)', // Apple-like ease
-        transitionDuration: `${duration}s`,
-        transform: `scale(${scale}) rotate(${rotation})`,
-      };
   };
-
-  const style = getDynamicStyle();
-
-  // Define viewbox size
-  const size = 600;
-  const viewBox = `-${size/2} -${size/2} ${size} ${size}`;
 
   return (
     <div 
         ref={containerRef}
         className={`
-            flex flex-col items-center justify-center relative animate-fade-in overflow-hidden select-none bg-slate-50 transition-all duration-500
-            ${isZenMode ? 'fixed inset-0 z-[100] w-screen h-screen' : 'h-full w-full'}
+            group flex flex-col items-center justify-center relative select-none bg-slate-50 transition-all duration-500 ease-in-out
+            ${isZenMode 
+                ? 'fixed inset-0 z-[100] w-screen h-screen justify-center items-center overflow-hidden' 
+                : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 justify-center animate-fade-in'
+            }
         `}
     >
         
@@ -319,30 +291,54 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
             </button>
         </div>
 
-        {/* 3D Torus Container */}
-        <div className="relative flex items-center justify-center w-full h-full perspective-[1000px]">
-            <div 
-                className="w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center will-change-transform"
-                style={style}
-            >
-                <svg 
-                    width="100%" 
-                    height="100%" 
-                    viewBox={viewBox} 
-                    className="overflow-visible"
-                    style={{ filter: 'drop-shadow(0px 20px 40px rgba(214, 40, 40, 0.4))' }}
-                >
-                    {particles.map(p => (
-                        <circle 
-                            key={p.id}
-                            cx={p.cx}
-                            cy={p.cy}
-                            r={p.r}
-                            fill="#d62828"
-                            fillOpacity={p.opacity}
-                        />
-                    ))}
+        {/* Center Content */}
+        <div className="flex flex-col items-center justify-center relative">
+            <div className="relative group/timer">
+                
+                {/* Aura / Glow Effect - Synced with Ring */}
+                <div 
+                    className={`
+                        absolute inset-0 rounded-full blur-[60px] transition-all
+                        ${phase === 'inhale' || phase === 'holdIn' ? 'bg-[#d62828] opacity-60 scale-110' : 'bg-[#d62828] opacity-20 scale-90'}
+                    `}
+                    style={{ transitionDuration: `${duration}s`, transitionTimingFunction: 'ease-in-out' }}
+                />
+
+                <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 relative z-10">
+                  {/* Glassy Track */}
+                  <circle 
+                    cx="170" cy="170" r={radius} 
+                    stroke="#e2e8f0" 
+                    strokeWidth="2" 
+                    fill="rgba(255,255,255,0.5)" 
+                    className="backdrop-blur-sm"
+                  />
+                  
+                  {/* Progress Ring */}
+                  <circle
+                    cx="170"
+                    cy="170"
+                    r={radius}
+                    stroke="#d62828"
+                    strokeWidth="4"
+                    fill="transparent"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    className="transition-all ease-linear"
+                    style={{ transitionDuration: `${duration}s` }}
+                  />
                 </svg>
+                
+                {/* Central Text */}
+                <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
+                    <span 
+                        key={phase} // Triggers animation on change
+                        className="text-2xl md:text-3xl font-light tracking-[0.2em] text-slate-800 uppercase animate-fade-in"
+                    >
+                        {getInstructionText()}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
