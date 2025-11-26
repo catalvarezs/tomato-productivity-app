@@ -280,7 +280,8 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       )}
 
       {/* 1. TOP SECTION - Flexible Header */}
-      <div className={`relative flex-none flex flex-col items-center gap-4 w-full pt-6 pb-2 px-4 transition-all duration-500 z-20 ${isZenMode ? 'hidden' : 'flex'}`}>
+      {/* Removed pt-6 to align flush with top, closer to logo */}
+      <div className={`relative flex-none flex flex-col items-center gap-4 w-full pt-0 pb-2 px-4 transition-all duration-500 z-20 ${isZenMode ? 'hidden' : 'flex'}`}>
          
          <div className="flex bg-slate-100 p-1 rounded-2xl shadow-inner w-full max-w-sm">
             {(Object.values(TimerMode)).map((m) => (
@@ -411,7 +412,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       </div>
 
       {/* 3. BOTTOM SECTION: Controls */}
-      {/* Sit within Flex flow to prevent overlaps on small screens */}
+      {/* Reverted pb-24 to pb-8 to lower buttons back down */}
       <div className={`
           flex-none flex items-center justify-center gap-8 z-30 transition-all duration-700 pb-8
           ${isZenMode 
