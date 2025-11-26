@@ -1,11 +1,13 @@
 
+
 import React, { useState } from 'react';
-import { Timer, CheckSquare, BookOpen, Menu, X, Languages, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Timer, CheckSquare, BookOpen, Menu, X, Languages, ChevronDown, CheckCircle2, Wind } from 'lucide-react';
 import { AppView, AppState, Session, TaskStatus, Language } from './types';
 import { usePersistedState } from './hooks/usePersistedState';
 import { TimerView } from './features/TimerView';
 import { TasksView } from './features/TasksView';
 import { MethodsView } from './features/MethodsView';
+import { BreathingView } from './features/BreathingView';
 import { useLanguage } from './contexts/LanguageContext';
 import { LANGUAGES } from './translations';
 
@@ -49,6 +51,8 @@ export default function App() {
         return <TasksView tasks={tasks} setTasks={setTasks} />;
       case AppView.METHODS:
         return <MethodsView />;
+      case AppView.BREATHING:
+        return <BreathingView />;
       default:
         return <TimerView onSessionComplete={handleSessionComplete} />;
     }
@@ -102,6 +106,12 @@ export default function App() {
               onClick={() => { setCurrentView(AppView.METHODS); closeMobileMenu(); }} 
               icon={BookOpen} 
               label={t.sidebar.methods}
+            />
+            <NavItem 
+              active={currentView === AppView.BREATHING} 
+              onClick={() => { setCurrentView(AppView.BREATHING); closeMobileMenu(); }} 
+              icon={Wind} 
+              label={t.sidebar.breathing}
             />
 
             {/* Language Selector in Sidebar */}

@@ -14,6 +14,7 @@ export const TRANSLATIONS = {
       timer: 'Timer',
       tasks: 'Tasks',
       methods: 'Methods',
+      breathing: 'Breathing',
       language: 'Language',
       footer: 'Code by Catalina • v1.1.0'
     },
@@ -78,6 +79,33 @@ export const TRANSLATIONS = {
           bestFor: 'Complex problem solving, coding, writing, and creative work that requires immersion.'
         }
       }
+    },
+    breathing: {
+      title: 'Breathing',
+      subtitle: 'Calm your mind, restore your focus.',
+      instructions: {
+        inhale: 'Inhale',
+        hold: 'Hold',
+        exhale: 'Exhale',
+        start: 'Click to start'
+      },
+      cards: {
+        box: {
+          title: 'Box Breathing',
+          desc: 'Used by Navy SEALs to stay calm under pressure. Equal duration for all phases.',
+          benefit: 'Instant stress reduction and focus.'
+        },
+        relax: {
+          title: '4-7-8 Relax',
+          desc: 'Developed by Dr. Andrew Weil. A natural tranquilizer for the nervous system.',
+          benefit: 'Sleep aid and deep anxiety relief.'
+        },
+        coherence: {
+          title: 'Heart Coherence',
+          desc: 'Balances your heart rate variability (HRV) by breathing at 6 breaths per minute.',
+          benefit: 'Emotional balance and mental clarity.'
+        }
+      }
     }
   },
   es: {
@@ -85,6 +113,7 @@ export const TRANSLATIONS = {
       timer: 'Temporizador',
       tasks: 'Tareas',
       methods: 'Métodos',
+      breathing: 'Respiración',
       language: 'Idioma',
       footer: 'Code by Catalina • v1.1.0'
     },
@@ -149,6 +178,33 @@ export const TRANSLATIONS = {
           bestFor: 'Resolución de problemas complejos, programación, escritura y trabajo creativo inmersivo.'
         }
       }
+    },
+    breathing: {
+      title: 'Respiración',
+      subtitle: 'Calma tu mente, restaura tu enfoque.',
+      instructions: {
+        inhale: 'Inhala',
+        hold: 'Sostén',
+        exhale: 'Exhala',
+        start: 'Click para iniciar'
+      },
+      cards: {
+        box: {
+          title: 'Respiración Cuadrada',
+          desc: 'Usada por los Navy SEALs para mantener la calma bajo presión. Duración igual en todas las fases.',
+          benefit: 'Reducción instantánea de estrés y foco.'
+        },
+        relax: {
+          title: '4-7-8 Relax',
+          desc: 'Desarrollada por el Dr. Andrew Weil. Un tranquilizante natural para el sistema nervioso.',
+          benefit: 'Ayuda para dormir y alivio de ansiedad.'
+        },
+        coherence: {
+          title: 'Coherencia Cardíaca',
+          desc: 'Equilibra tu variabilidad de frecuencia cardíaca (VFC) respirando a 6 respiraciones por minuto.',
+          benefit: 'Balance emocional y claridad mental.'
+        }
+      }
     }
   },
   pt: {
@@ -156,6 +212,7 @@ export const TRANSLATIONS = {
       timer: 'Temporizador',
       tasks: 'Tarefas',
       methods: 'Métodos',
+      breathing: 'Respiração',
       language: 'Idioma',
       footer: 'Code by Catalina • v1.1.0'
     },
@@ -220,6 +277,33 @@ export const TRANSLATIONS = {
           bestFor: 'Resolução de problemas, programação, escrita e trabalho criativo.'
         }
       }
+    },
+    breathing: {
+      title: 'Respiração',
+      subtitle: 'Acalme sua mente, restaure seu foco.',
+      instructions: {
+        inhale: 'Inspire',
+        hold: 'Segure',
+        exhale: 'Expire',
+        start: 'Clique para iniciar'
+      },
+      cards: {
+        box: {
+          title: 'Respiração Quadrada',
+          desc: 'Usada pelos Navy SEALs para manter a calma sob pressão. Duração igual para todas as fases.',
+          benefit: 'Redução instantânea de estresse e foco.'
+        },
+        relax: {
+          title: '4-7-8 Relax',
+          desc: 'Desenvolvida pelo Dr. Andrew Weil. Um tranquilizante natural para o sistema nervoso.',
+          benefit: 'Ajuda para dormir e alívio profundo de ansiedade.'
+        },
+        coherence: {
+          title: 'Coerência Cardíaca',
+          desc: 'Equilibra sua variabilidade da frequência cardíaca (VFC) respirando a 6 respirações por minuto.',
+          benefit: 'Equilíbrio emocional e clareza mental.'
+        }
+      }
     }
   },
   de: {
@@ -227,6 +311,7 @@ export const TRANSLATIONS = {
       timer: 'Timer',
       tasks: 'Aufgaben',
       methods: 'Methoden',
+      breathing: 'Atmung',
       language: 'Sprache',
       footer: 'Code by Catalina • v1.1.0'
     },
@@ -291,6 +376,33 @@ export const TRANSLATIONS = {
           bestFor: 'Komplexe Problemlösung, Programmieren, Schreiben und kreative Arbeit.'
         }
       }
+    },
+    breathing: {
+      title: 'Atmung',
+      subtitle: 'Beruhigen Sie Ihren Geist, stellen Sie Ihren Fokus wieder her.',
+      instructions: {
+        inhale: 'Einatmen',
+        hold: 'Halten',
+        exhale: 'Ausatmen',
+        start: 'Klicken zum Starten'
+      },
+      cards: {
+        box: {
+          title: 'Box-Atmung',
+          desc: 'Von Navy SEALs verwendet, um unter Druck ruhig zu bleiben. Gleiche Dauer für alle Phasen.',
+          benefit: 'Sofortige Stressreduzierung und Fokus.'
+        },
+        relax: {
+          title: '4-7-8 Entspannung',
+          desc: 'Entwickelt von Dr. Andrew Weil. Ein natürliches Beruhigungsmittel für das Nervensystem.',
+          benefit: 'Einschlafhilfe und tiefe Angstlinderung.'
+        },
+        coherence: {
+          title: 'Herzkoherenz',
+          desc: 'Gleicht Ihre Herzfrequenzvariabilität (HRV) durch Atmen mit 6 Atemzügen pro Minute aus.',
+          benefit: 'Emotionales Gleichgewicht und geistige Klarheit.'
+        }
+      }
     }
   },
   ca: {
@@ -298,6 +410,7 @@ export const TRANSLATIONS = {
       timer: 'Temporitzador',
       tasks: 'Tasques',
       methods: 'Mètodes',
+      breathing: 'Respiració',
       language: 'Idioma',
       footer: 'Code by Catalina • v1.1.0'
     },
@@ -360,6 +473,33 @@ export const TRANSLATIONS = {
           title: 'Ritme Ultradià',
           desc: 'Basat en cicles biològics naturals (BRAC). El cervell només manté focus intens durant 90 minuts.',
           bestFor: 'Resolució de problemes complexos, programació, escriptura i treball creatiu.'
+        }
+      }
+    },
+    breathing: {
+      title: 'Respiració',
+      subtitle: 'Calma la teva ment, restaura el teu focus.',
+      instructions: {
+        inhale: 'Inhala',
+        hold: 'Aguanta',
+        exhale: 'Exhala',
+        start: 'Clica per iniciar'
+      },
+      cards: {
+        box: {
+          title: 'Respiració Quadrada',
+          desc: 'Utilitzada pels Navy SEALs per mantenir la calma sota pressió. Durada igual en totes les fases.',
+          benefit: 'Reducció instantània d\'estrès i focus.'
+        },
+        relax: {
+          title: '4-7-8 Relax',
+          desc: 'Desenvolupada pel Dr. Andrew Weil. Un tranquil·litzant natural per al sistema nerviós.',
+          benefit: 'Ajuda per dormir i alleujament d\'ansietat.'
+        },
+        coherence: {
+          title: 'Coherència Cardíaca',
+          desc: 'Equilibra la teva variabilitat de freqüència cardíaca (VFC) respirant a 6 respiracions per minut.',
+          benefit: 'Balanç emocional i claredat mental.'
         }
       }
     }

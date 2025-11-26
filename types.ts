@@ -3,7 +3,8 @@
 export enum AppView {
   TIMER = 'TIMER',
   TASKS = 'TASKS',
-  METHODS = 'METHODS'
+  METHODS = 'METHODS',
+  BREATHING = 'BREATHING'
 }
 
 export enum TaskStatus {
@@ -41,6 +42,25 @@ export interface Session {
   interruptions?: number; // Number of times paused
 }
 
+export interface AppState {
+  tasks: Task[];
+  sessions: Session[];
+}
+
+export type TimerConfig = {
+  [key in TimerMode]: number; // minutes
+};
+
+export interface BreathingPattern {
+  id: string;
+  nameKey: string; // Key for translation
+  descKey: string;
+  benefitKey: string;
+  inhale: number; // seconds
+  holdIn: number;
+  exhale: number;
+  holdOut: number;
+}
 export interface AppState {
   tasks: Task[];
   sessions: Session[];
