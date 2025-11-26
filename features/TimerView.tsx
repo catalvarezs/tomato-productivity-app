@@ -1,29 +1,27 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider } from '../components/ui';
 import { TimerMode, Session, TimerTechnique, AmbientSoundType } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TimerViewProps {
   onSessionComplete: (session: Session) => void;
 }
 
 // Configuration for different productivity techniques
-const TECHNIQUES: Record<TimerTechnique, { label: string; config: Record<TimerMode, number> }> = {
+const TECHNIQUES_CONFIG: Record<TimerTechnique, { config: Record<TimerMode, number> }> = {
   POMODORO: {
-    label: 'Pomodoro (25/5)',
     config: { [TimerMode.FOCUS]: 25, [TimerMode.SHORT_BREAK]: 5, [TimerMode.LONG_BREAK]: 15 }
   },
   FIFTY_TWO: {
-    label: 'Flow (52/17)',
     config: { [TimerMode.FOCUS]: 52, [TimerMode.SHORT_BREAK]: 17, [TimerMode.LONG_BREAK]: 17 }
   },
   NINETY: {
-    label: 'Ultradian (90/20)',
     config: { [TimerMode.FOCUS]: 90, [TimerMode.SHORT_BREAK]: 20, [TimerMode.LONG_BREAK]: 20 }
   },
   CUSTOM: {
-    label: 'Custom',
     config: { [TimerMode.FOCUS]: 45, [TimerMode.SHORT_BREAK]: 10, [TimerMode.LONG_BREAK]: 20 }
   }
 };
@@ -35,17 +33,18 @@ const SOUNDS: Record<AmbientSoundType, { label: string; url: string }> = {
   CAFE: { label: 'Coffee Shop', url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg' }
 };
 
-// Unified color scheme - all modes use the same primary color #d62828
-const MODE_META: Record<TimerMode, { label: string; icon: React.FC<any>; color: string; glow: string }> = {
-  [TimerMode.FOCUS]: { label: 'Focus', icon: Zap, color: 'text-[#d62828]', glow: 'shadow-[#d62828]/20' },
-  [TimerMode.SHORT_BREAK]: { label: 'Short Break', icon: Coffee, color: 'text-[#d62828]', glow: 'shadow-[#d62828]/20' },
-  [TimerMode.LONG_BREAK]: { label: 'Long Break', icon: Brain, color: 'text-[#d62828]', glow: 'shadow-[#d62828]/20' },
+const MODE_META: Record<TimerMode, { icon: React.FC<any>; color: string }> = {
+  [TimerMode.FOCUS]: { icon: Zap, color: 'text-[#d62828]' },
+  [TimerMode.SHORT_BREAK]: { icon: Coffee, color: 'text-[#d62828]' },
+  [TimerMode.LONG_BREAK]: { icon: Brain, color: 'text-[#d62828]' },
 };
 
 export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
+  const { t } = useLanguage(); // Consume Context
+
   const [technique, setTechnique] = useState<TimerTechnique>('POMODORO');
   const [mode, setMode] = useState<TimerMode>(TimerMode.FOCUS);
-  const [customConfig, setCustomConfig] = useState(TECHNIQUES.CUSTOM.config);
+  const [customConfig, setCustomConfig] = useState(TECHNIQUES_CONFIG.CUSTOM.config);
   
   // Audio State
   const [selectedSound, setSelectedSound] = useState<AmbientSoundType>('NONE');
@@ -58,10 +57,21 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const activityTimeoutRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Helper to get translated labels
+  const getTechniqueLabel = (key: TimerTechnique) => {
+    switch (key) {
+        case 'POMODORO': return t.methods.cards.pomodoro.title;
+        case 'FIFTY_TWO': return t.methods.cards.fiftyTwo.title;
+        case 'NINETY': return t.methods.cards.ultradian.title;
+        case 'CUSTOM': return t.timer.technique.custom;
+        default: return key;
+    }
+  };
   
   const getDuration = useCallback(() => {
     if (technique === 'CUSTOM') return customConfig[mode] * 60;
-    return TECHNIQUES[technique].config[mode] * 60;
+    return TECHNIQUES_CONFIG[technique].config[mode] * 60;
   }, [technique, mode, customConfig]);
 
   const [timeLeft, setTimeLeft] = useState(getDuration());
@@ -72,7 +82,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
   // Native Fullscreen & Activity Tracker
   useEffect(() => {
-    // 1. Sync React state with Browser Native Fullscreen (handling ESC key)
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setIsZenMode(false);
@@ -81,7 +90,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     
-    // 2. Mouse Activity Logic
     if (!isZenMode) {
         setIsUserActive(true);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -94,10 +102,9 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         }
         activityTimeoutRef.current = window.setTimeout(() => {
             setIsUserActive(false);
-        }, 2000); // 2 seconds of inactivity
+        }, 2000);
     };
 
-    // Trigger initial check
     handleMouseMove();
     window.addEventListener('mousemove', handleMouseMove);
     
@@ -108,21 +115,18 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     };
   }, [isZenMode]);
 
-  // Reset timer on config change
   useEffect(() => {
     setIsActive(false);
     setTimeLeft(getDuration());
     setInterruptions(0);
   }, [technique, mode, getDuration]);
 
-  // Volume sync
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
 
-  // Playback Logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -171,7 +175,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     setInterruptions(0);
   }, [mode, getDuration, onSessionComplete, interruptions]);
 
-  // Timer Tick
   useEffect(() => {
     let interval: number;
     if (isActive && timeLeft > 0) {
@@ -222,7 +225,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
   const toggleZenMode = async () => {
       if (!isZenMode) {
-          // Enter Fullscreen
           if (containerRef.current) {
               try {
                   await containerRef.current.requestFullscreen();
@@ -232,7 +234,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
           }
           setIsZenMode(true);
       } else {
-          // Exit Fullscreen
           if (document.fullscreenElement) {
               try {
                 await document.exitFullscreen();
@@ -244,7 +245,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       }
   };
 
-  // Visuals
   const totalTime = getDuration();
   const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
   const radius = 120;
@@ -266,23 +266,20 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
-      {/* Zen Mode Toggle (Top Right) */}
       <button 
         onClick={toggleZenMode}
         className={`
             absolute top-6 right-6 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 
             ${isZenMode ? `bg-white shadow-sm transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-0'}` : ''}
         `}
-        title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+        title={t.timer.controls.zen}
       >
         {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
       </button>
 
-      {/* 1. TOP SECTION: Mode Toggles & Technique Strategy */}
-      {/* Hidden completely in Zen Mode to remove distractions */}
+      {/* 1. TOP SECTION */}
       <div className={`flex flex-col items-center gap-4 w-full transition-all duration-500 ${isZenMode ? 'hidden' : 'flex'}`}>
          
-         {/* Mode Toggles */}
          <div className="flex bg-slate-100 p-1 rounded-2xl shadow-inner w-full max-w-sm">
             {(Object.keys(MODE_META) as TimerMode[]).map((m) => (
               <button
@@ -294,18 +291,17 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                {MODE_META[m].label}
+                {t.timer.modes[m]}
               </button>
             ))}
          </div>
 
-         {/* Strategy Selector (Custom Dropdown) */}
          <div className="relative z-30">
             <button 
                 onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-sm font-medium hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
             >
-                <span>{TECHNIQUES[technique].label}</span>
+                <span>{getTechniqueLabel(technique)}</span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${showTechniqueMenu ? 'rotate-180' : ''}`} />
             </button>
 
@@ -315,23 +311,26 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                 <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
                   <div className="absolute left-1/2 -translate-x-1/2 w-full">
                       <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
-                        {Object.entries(TECHNIQUES).map(([key, tech]) => (
-                            <button
-                                key={key}
-                                onClick={() => {
-                                    setTechnique(key as TimerTechnique);
-                                    setShowTechniqueMenu(false);
-                                }}
-                                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                    technique === key 
-                                    ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
-                                    : 'text-slate-600 hover:bg-slate-50'
-                                }`}
-                            >
-                                {tech.label}
-                                {technique === key && <CheckCircle2 className="w-4 h-4" />}
-                            </button>
-                        ))}
+                        {Object.keys(TECHNIQUES_CONFIG).map((key) => {
+                            const techKey = key as TimerTechnique;
+                            return (
+                                <button
+                                    key={techKey}
+                                    onClick={() => {
+                                        setTechnique(techKey);
+                                        setShowTechniqueMenu(false);
+                                    }}
+                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                        technique === techKey 
+                                        ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
+                                        : 'text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {getTechniqueLabel(techKey)}
+                                    {technique === techKey && <CheckCircle2 className="w-4 h-4" />}
+                                </button>
+                            );
+                        })}
                       </div>
                   </div>
                 </div>
@@ -340,14 +339,12 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
          </div>
       </div>
 
-      {/* 2. CENTER SECTION: Timer Visualization */}
+      {/* 2. CENTER SECTION: Timer */}
       <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'scale-110 flex-none relative' : 'flex-1 w-full'}`}>
         <div className="relative group/timer">
             
-            {/* Dynamic Glow - Uniform Color */}
             <div className={`absolute inset-0 rounded-full blur-3xl opacity-40 transition-all duration-1000 ${isActive ? 'bg-[#d62828]/50 scale-110' : 'bg-slate-200 scale-90'}`} />
 
-            {/* SVG Timer */}
             <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 drop-shadow-2xl relative z-10">
               <defs>
                 <radialGradient id="sphereGradient" cx="30%" cy="30%" r="70%">
@@ -368,27 +365,8 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                 </filter>
               </defs>
               
-              {/* Sphere Background */}
-              <circle
-                cx="170"
-                cy="170"
-                r={radius}
-                fill="url(#sphereGradient)"
-                className="drop-shadow-sm"
-              />
-
-              {/* Track (Grey) */}
-              <circle
-                cx="170"
-                cy="170"
-                r={radius}
-                stroke="#e2e8f0"
-                strokeWidth="6"
-                fill="transparent"
-                filter="url(#innerShadow)"
-              />
-
-              {/* Progress (Red) */}
+              <circle cx="170" cy="170" r={radius} fill="url(#sphereGradient)" className="drop-shadow-sm" />
+              <circle cx="170" cy="170" r={radius} stroke="#e2e8f0" strokeWidth="6" fill="transparent" filter="url(#innerShadow)" />
               <circle
                 cx="170"
                 cy="170"
@@ -403,7 +381,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               />
             </svg>
             
-            {/* Inner Content */}
             <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
               <div className={`p-3 rounded-full mb-4 transition-all duration-500 ${isActive ? 'bg-[#d62828]/5 text-[#d62828]' : 'bg-transparent text-slate-300'}`}>
                  <CurrentIcon className={`w-8 h-8 md:w-10 md:h-10 transition-colors duration-500`} />
@@ -421,10 +398,10 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       onBlur={() => handleCustomTimeSubmit()}
                       onKeyDown={(e) => e.key === 'Enter' && handleCustomTimeSubmit()}
                       className="text-7xl md:text-8xl font-light tracking-tighter text-center bg-transparent outline-none caret-slate-300 leading-none text-slate-800 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-[#d62828]/20 p-0 m-0 border-none focus:ring-0"
-                      placeholder="25"
+                      placeholder={t.timer.edit.placeholder}
                   />
                   <span className="text-xs font-semibold text-[#d62828] animate-fade-in mt-2 uppercase tracking-widest opacity-80">
-                    Set Minutes
+                    {t.timer.edit.label}
                   </span>
                 </form>
               ) : (
@@ -439,7 +416,9 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
               {!isEditingTime && (
                 <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4">
-                  {isActive ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : 'Focusing...') : 'Ready'}
+                  {isActive 
+                    ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : (mode === TimerMode.FOCUS ? t.timer.status.focusing : t.timer.status.resting)) 
+                    : t.timer.status.ready}
                 </p>
               )}
             </div>
@@ -447,7 +426,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       </div>
 
       {/* 3. BOTTOM SECTION: Controls */}
-      {/* Zen Mode: Absolute positioning to center controls relative to the screen center, offset by timer height */}
       <div className={`
           flex items-center justify-center gap-8 z-30 transition-all duration-700
           ${isZenMode 
@@ -456,18 +434,16 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
           }
       `}>
           
-          {/* Reset Button - Hidden in Zen Mode */}
           {!isZenMode && (
               <button 
                 onClick={resetTimer}
                 className="group/btn flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200 transition-all active:scale-95 shadow-sm"
-                title="Reset Timer"
+                title={t.timer.controls.reset}
               >
                 <RotateCcw className="w-5 h-5 group-hover/btn:-rotate-180 transition-transform duration-500" />
               </button>
           )}
           
-          {/* Play/Pause Button - Smaller in Zen Mode */}
           <button 
             onClick={toggleTimer}
             className={`flex items-center justify-center rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
@@ -475,17 +451,17 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                 ? 'bg-white border-2 border-slate-100 text-slate-900' 
                 : 'bg-[#d62828] text-white shadow-[#d62828]/30'
             } ${isZenMode ? 'w-14 h-14' : 'w-20 h-20'}`}
+            title={isActive ? t.timer.controls.pause : t.timer.controls.play}
           >
             {isActive ? <Pause className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current`} /> : <Play className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current ml-1`} />}
           </button>
 
-          {/* Sound Control Button - Hidden in Zen Mode */}
           {!isZenMode && (
               <div className="relative">
                   <button 
                     onClick={() => setShowSoundControls(!showSoundControls)}
                     className={`flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 shadow-sm ${selectedSound !== 'NONE' ? 'text-[#d62828] border-[#d62828]/20 bg-[#d62828]/10' : ''}`}
-                    title="Ambient Sound"
+                    title={t.timer.controls.sound}
                   >
                     <Music2 className="w-5 h-5" />
                   </button>
@@ -497,7 +473,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                         <div className="absolute left-1/2 -translate-x-1/2 w-full">
                           <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
                             <div className="space-y-0.5 mb-3 p-1">
-                                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Ambience</h4>
+                                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">{t.timer.controls.sound}</h4>
                                 {Object.entries(SOUNDS).map(([key, sound]) => (
                                     <button
                                         key={key}

@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { Timer, CheckSquare, BookOpen, Menu, X } from 'lucide-react';
-import { AppView, AppState, Session, TaskStatus } from './types';
+import { Timer, CheckSquare, BookOpen, Menu, X, Languages, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { AppView, AppState, Session, TaskStatus, Language } from './types';
 import { usePersistedState } from './hooks/usePersistedState';
 import { TimerView } from './features/TimerView';
 import { TasksView } from './features/TasksView';
 import { MethodsView } from './features/MethodsView';
+import { useLanguage } from './contexts/LanguageContext';
+import { LANGUAGES } from './translations';
 
 const INITIAL_STATE: AppState = {
   tasks: [
@@ -31,6 +33,9 @@ export default function App() {
   const [tasks, setTasks] = usePersistedState('tomato_tasks', INITIAL_STATE.tasks);
   const [sessions, setSessions] = usePersistedState('tomato_sessions', INITIAL_STATE.sessions);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  
+  const { t, language, setLanguage, isTransitioning } = useLanguage();
 
   const handleSessionComplete = (session: Session) => {
     setSessions(prev => [...prev, session]);
@@ -84,20 +89,61 @@ export default function App() {
               active={currentView === AppView.TIMER} 
               onClick={() => { setCurrentView(AppView.TIMER); closeMobileMenu(); }} 
               icon={Timer} 
-              label="Timer"
+              label={t.sidebar.timer}
             />
             <NavItem 
               active={currentView === AppView.TASKS} 
               onClick={() => { setCurrentView(AppView.TASKS); closeMobileMenu(); }} 
               icon={CheckSquare} 
-              label="Tasks"
+              label={t.sidebar.tasks}
             />
             <NavItem 
               active={currentView === AppView.METHODS} 
               onClick={() => { setCurrentView(AppView.METHODS); closeMobileMenu(); }} 
               icon={BookOpen} 
-              label="Methods"
+              label={t.sidebar.methods}
             />
+
+            {/* Language Selector in Sidebar */}
+            <div className="relative pt-4">
+                <button
+                    onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 ${isLangMenuOpen ? 'bg-slate-50' : ''}`}
+                >
+                    <Languages className="w-5 h-5 stroke-2" />
+                    <span>{t.sidebar.language}</span>
+                    <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isLangMenuOpen && (
+                    <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsLangMenuOpen(false)} />
+                    <div className="absolute left-0 right-0 top-full mt-2 z-20">
+                         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top mx-2">
+                             {(Object.keys(LANGUAGES) as Language[]).map((langKey) => (
+                                 <button
+                                    key={langKey}
+                                    onClick={() => {
+                                        setLanguage(langKey);
+                                        setIsLangMenuOpen(false);
+                                        closeMobileMenu();
+                                    }}
+                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                        language === langKey
+                                        ? 'bg-[#d62828]/10 text-[#d62828] font-medium'
+                                        : 'text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                 >
+                                     {LANGUAGES[langKey]}
+                                     {language === langKey && <CheckCircle2 className="w-4 h-4" />}
+                                 </button>
+                             ))}
+                         </div>
+                    </div>
+                    </>
+                )}
+            </div>
+
           </nav>
           
           <div className="mt-auto pt-6 border-t border-slate-100">
@@ -107,7 +153,7 @@ export default function App() {
                rel="noopener noreferrer"
                className="text-xs text-slate-400 text-center block hover:text-[#d62828] transition-colors"
              >
-               Code by Catalina • v1.1.0
+               {t.sidebar.footer}
              </a>
           </div>
         </div>
@@ -122,7 +168,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-hidden flex flex-col pt-16 md:pt-0">
+      <main className={`flex-1 relative overflow-hidden flex flex-col pt-16 md:pt-0 transition-opacity duration-300 ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-12 scroll-smooth">
           <div className="max-w-5xl mx-auto h-full flex flex-col animate-fade-in-up">
             {renderView()}

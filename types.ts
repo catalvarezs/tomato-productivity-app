@@ -22,6 +22,8 @@ export type TimerTechnique = 'POMODORO' | 'FIFTY_TWO' | 'NINETY' | 'CUSTOM';
 
 export type AmbientSoundType = 'NONE' | 'RAIN' | 'FOREST' | 'CAFE';
 
+export type Language = 'en' | 'es' | 'pt' | 'de' | 'ca';
+
 export interface Task {
   id: string;
   title: string;

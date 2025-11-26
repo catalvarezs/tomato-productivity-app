@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, CheckSquare, Square, Clock } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { Task, TaskStatus } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TasksViewProps {
   tasks: Task[];
@@ -9,6 +10,7 @@ interface TasksViewProps {
 }
 
 export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
@@ -48,8 +50,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
   return (
     <div className="max-w-3xl mx-auto w-full h-full flex flex-col space-y-8 pb-10">
       <header className="text-center md:text-left">
-        <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">Tasks</h2>
-        <p className="text-slate-500">Harvest your goals.</p>
+        <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">{t.tasks.title}</h2>
+        <p className="text-slate-500">{t.tasks.subtitle}</p>
       </header>
 
       {/* Hero Input Section */}
@@ -67,7 +69,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder="What needs to be done?"
+                    placeholder={t.tasks.inputPlaceholder}
                     className="w-full bg-transparent border-none focus:ring-0 px-14 py-4 text-slate-700 placeholder:text-slate-400 text-center font-medium outline-none transition-all"
                 />
                 
@@ -89,7 +91,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
         {/* Pending Section */}
         <section>
           <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">In Progress</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.tasks.inProgress}</h3>
             <Badge color="red">{pendingTasks.length}</Badge>
           </div>
           
@@ -99,8 +101,8 @@ export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
                 <div className="p-3 bg-white rounded-full mb-3 shadow-sm">
                     <CheckSquare className="w-6 h-6 text-slate-300" />
                 </div>
-                <p className="text-sm font-medium">No pending tasks.</p>
-                <p className="text-xs opacity-70">Enjoy the quiet or add a new goal.</p>
+                <p className="text-sm font-medium">{t.tasks.emptyPending.title}</p>
+                <p className="text-xs opacity-70">{t.tasks.emptyPending.subtitle}</p>
               </div>
             )}
             {pendingTasks.map(task => (
@@ -113,7 +115,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ tasks, setTasks }) => {
         {completedTasks.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4 px-1 mt-8 pt-8 border-t border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ripe & Ready</h3>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.tasks.completed}</h3>
               <Badge color="green">{completedTasks.length}</Badge>
             </div>
             <div className="space-y-3 opacity-90">
