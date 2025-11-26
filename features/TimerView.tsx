@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Music2, Volume2, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider } from '../components/ui';
 import { TimerMode, Session, TimerTechnique, AmbientSoundType } from '../types';
 
@@ -52,8 +52,11 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const [volume, setVolume] = useState(0.5);
   const [showSoundControls, setShowSoundControls] = useState(false);
   const [showTechniqueMenu, setShowTechniqueMenu] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [isUserActive, setIsUserActive] = useState(true);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activityTimeoutRef = useRef<number | null>(null);
   
   const getDuration = useCallback(() => {
     if (technique === 'CUSTOM') return customConfig[mode] * 60;
@@ -65,6 +68,33 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [interruptions, setInterruptions] = useState(0);
+
+  // Zen Mode Activity Tracker
+  useEffect(() => {
+    if (!isZenMode) {
+        setIsUserActive(true);
+        return;
+    }
+
+    const handleMouseMove = () => {
+        setIsUserActive(true);
+        if (activityTimeoutRef.current) {
+            window.clearTimeout(activityTimeoutRef.current);
+        }
+        activityTimeoutRef.current = window.setTimeout(() => {
+            setIsUserActive(false);
+        }, 2000); // 2 seconds of inactivity
+    };
+
+    // Trigger initial check
+    handleMouseMove();
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        if (activityTimeoutRef.current) window.clearTimeout(activityTimeoutRef.current);
+    };
+  }, [isZenMode]);
 
   // Reset timer on config change
   useEffect(() => {
@@ -178,6 +208,10 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       setInterruptions(0);
   };
 
+  const toggleZenMode = () => {
+      setIsZenMode(!isZenMode);
+  };
+
   // Visuals
   const totalTime = getDuration();
   const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
@@ -187,12 +221,31 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const CurrentIcon = MODE_META[mode].icon;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full w-full max-w-lg mx-auto gap-8 animate-fade-in py-8 px-4">
+    <div className={`
+        group flex flex-col items-center transition-all duration-500 ease-in-out
+        ${isZenMode 
+            ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen justify-center gap-14' // gap-14 is approx 3.5rem (56px), matching button height
+            : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 gap-8 justify-center animate-fade-in'
+        }
+    `}>
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
+      {/* Zen Mode Toggle (Top Right) */}
+      <button 
+        onClick={toggleZenMode}
+        className={`
+            absolute top-6 right-6 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 
+            ${isZenMode ? `bg-white shadow-sm transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-0'}` : ''}
+        `}
+        title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+      >
+        {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+      </button>
+
       {/* 1. TOP SECTION: Mode Toggles & Technique Strategy */}
-      <div className="flex flex-col items-center gap-4 w-full">
+      {/* Hidden completely in Zen Mode to remove distractions */}
+      <div className={`flex flex-col items-center gap-4 w-full transition-all duration-500 ${isZenMode ? 'hidden' : 'flex'}`}>
          
          {/* Mode Toggles */}
          <div className="flex bg-slate-100 p-1 rounded-2xl shadow-inner w-full max-w-sm">
@@ -253,8 +306,8 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       </div>
 
       {/* 2. CENTER SECTION: Timer Visualization */}
-      <div className="flex-1 flex flex-col items-center justify-center relative w-full">
-        <div className="relative group">
+      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'scale-110 flex-none' : 'flex-1 w-full'}`}>
+        <div className="relative group/timer">
             
             {/* Dynamic Glow - Uniform Color */}
             <div className={`absolute inset-0 rounded-full blur-3xl opacity-40 transition-all duration-1000 ${isActive ? 'bg-[#d62828]/50 scale-110' : 'bg-slate-200 scale-90'}`} />
@@ -262,42 +315,67 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
             {/* SVG Timer */}
             <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 drop-shadow-2xl relative z-10">
               <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#d62828" className="transition-all" />
-                  <stop offset="100%" stopColor="#d62828" className="transition-all" />
+                <radialGradient id="sphereGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#f1f5f9" />
+                </radialGradient>
+                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#d62828" />
+                  <stop offset="100%" stopColor="#ef4444" />
                 </linearGradient>
+                <filter id="innerShadow">
+                    <feOffset dx="0" dy="1" />
+                    <feGaussianBlur stdDeviation="1" result="offset-blur" />
+                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
+                    <feFlood floodColor="black" floodOpacity="0.1" result="color" />
+                    <feComposite operator="in" in="color" in2="inverse" result="shadow" />
+                    <feComposite operator="over" in="shadow" in2="SourceGraphic" /> 
+                </filter>
               </defs>
+              
+              {/* Sphere Background */}
               <circle
                 cx="170"
                 cy="170"
                 r={radius}
-                stroke="#f8fafc"
-                strokeWidth="8"
-                fill="white"
-                className="opacity-100"
+                fill="url(#sphereGradient)"
+                className="drop-shadow-sm"
               />
+
+              {/* Track (Grey) */}
               <circle
                 cx="170"
                 cy="170"
                 r={radius}
-                stroke="url(#gradient)"
-                strokeWidth="8"
+                stroke="#e2e8f0"
+                strokeWidth="6"
+                fill="transparent"
+                filter="url(#innerShadow)"
+              />
+
+              {/* Progress (Red) */}
+              <circle
+                cx="170"
+                cy="170"
+                r={radius}
+                stroke="url(#progressGradient)"
+                strokeWidth="6"
                 fill="transparent"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                className={`text-[#d62828] transition-all duration-1000 ease-linear`}
+                className={`transition-all duration-1000 ease-linear ${isActive ? 'opacity-100' : 'opacity-80'}`}
               />
             </svg>
             
             {/* Inner Content */}
             <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
-              <div className={`p-3 rounded-full bg-slate-50 mb-4 transition-colors duration-500 ${isActive ? 'bg-[#d62828]/10' : ''}`}>
-                 <CurrentIcon className={`w-8 h-8 md:w-10 md:h-10 transition-colors duration-500 ${isActive ? 'text-[#d62828]' : 'text-slate-400'}`} />
+              <div className={`p-3 rounded-full mb-4 transition-all duration-500 ${isActive ? 'bg-[#d62828]/5 text-[#d62828]' : 'bg-transparent text-slate-300'}`}>
+                 <CurrentIcon className={`w-8 h-8 md:w-10 md:h-10 transition-colors duration-500`} />
               </div>
               
               {isEditingTime ? (
-                <form onSubmit={handleCustomTimeSubmit} className="flex flex-col items-center w-full">
+                <form onSubmit={handleCustomTimeSubmit} className="flex flex-col items-center w-full max-w-[200px]">
                   <input 
                       autoFocus
                       type="number"
@@ -306,11 +384,12 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => handleCustomTimeSubmit()}
-                      className="text-7xl md:text-8xl font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] text-slate-800 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-[#d62828]/20"
+                      onKeyDown={(e) => e.key === 'Enter' && handleCustomTimeSubmit()}
+                      className="text-7xl md:text-8xl font-light tracking-tighter text-center bg-transparent outline-none caret-slate-300 leading-none text-slate-800 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-[#d62828]/20 p-0 m-0 border-none focus:ring-0"
                       placeholder="25"
                   />
-                  <span className="text-xs font-semibold text-[#d62828] animate-fade-in mt-2 uppercase tracking-widest">
-                    Set Minutes & Press Enter
+                  <span className="text-xs font-semibold text-[#d62828] animate-fade-in mt-2 uppercase tracking-widest opacity-80">
+                    Set Minutes
                   </span>
                 </form>
               ) : (
@@ -325,77 +404,88 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
               {!isEditingTime && (
                 <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4">
-                  {isActive ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : 'Focusing...') : (interruptions > 0 ? `${interruptions} interruption${interruptions > 1 ? 's' : ''}` : 'Ready')}
+                  {isActive ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : 'Focusing...') : 'Ready'}
                 </p>
               )}
             </div>
         </div>
       </div>
 
-      {/* 3. BOTTOM SECTION: Controls (Centered & Unified) */}
-      <div className="flex items-center justify-center gap-8 w-full z-30">
+      {/* 3. BOTTOM SECTION: Controls */}
+      {/* In Zen Mode, Reset and Music buttons are removed, Play button floats transparently */}
+      <div className={`
+          flex items-center justify-center gap-8 z-30 transition-all duration-700
+          ${isZenMode 
+            ? `flex-none transition-opacity duration-700 ${isUserActive ? 'opacity-30 hover:opacity-100' : 'opacity-0 pointer-events-none'}` 
+            : 'w-full'
+          }
+      `}>
           
-          {/* Reset Button */}
-          <button 
-            onClick={resetTimer}
-            className="group flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200 transition-all active:scale-95 shadow-sm"
-            title="Reset Timer"
-          >
-            <RotateCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" />
-          </button>
+          {/* Reset Button - Hidden in Zen Mode */}
+          {!isZenMode && (
+              <button 
+                onClick={resetTimer}
+                className="group/btn flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200 transition-all active:scale-95 shadow-sm"
+                title="Reset Timer"
+              >
+                <RotateCcw className="w-5 h-5 group-hover/btn:-rotate-180 transition-transform duration-500" />
+              </button>
+          )}
           
-          {/* Play/Pause Button */}
+          {/* Play/Pause Button - Smaller in Zen Mode */}
           <button 
             onClick={toggleTimer}
-            className={`flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+            className={`flex items-center justify-center rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
               isActive 
                 ? 'bg-white border-2 border-slate-100 text-slate-900' 
                 : 'bg-[#d62828] text-white shadow-[#d62828]/30'
-            }`}
+            } ${isZenMode ? 'w-14 h-14' : 'w-20 h-20'}`}
           >
-            {isActive ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+            {isActive ? <Pause className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current`} /> : <Play className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current ml-1`} />}
           </button>
 
-          {/* Sound Control Button (Unified Dropdown) */}
-          <div className="relative">
-              <button 
-                onClick={() => setShowSoundControls(!showSoundControls)}
-                className={`flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 shadow-sm ${selectedSound !== 'NONE' ? 'text-[#d62828] border-[#d62828]/20 bg-[#d62828]/10' : ''}`}
-                title="Ambient Sound"
-              >
-                <Music2 className="w-5 h-5" />
-              </button>
+          {/* Sound Control Button - Hidden in Zen Mode */}
+          {!isZenMode && (
+              <div className="relative">
+                  <button 
+                    onClick={() => setShowSoundControls(!showSoundControls)}
+                    className={`flex items-center justify-center w-14 h-14 rounded-full bg-white border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 shadow-sm ${selectedSound !== 'NONE' ? 'text-[#d62828] border-[#d62828]/20 bg-[#d62828]/10' : ''}`}
+                    title="Ambient Sound"
+                  >
+                    <Music2 className="w-5 h-5" />
+                  </button>
 
-               {showSoundControls && (
-                  <>
-                  <div className="fixed inset-0 z-30" onClick={() => setShowSoundControls(false)}/>
-                  <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
-                    <div className="absolute left-1/2 -translate-x-1/2 w-full">
-                      <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
-                        <div className="space-y-0.5 mb-3 p-1">
-                            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Ambience</h4>
-                            {Object.entries(SOUNDS).map(([key, sound]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setSelectedSound(key as AmbientSoundType)}
-                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                        selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    {sound.label}
-                                    {selectedSound === key && <Volume2 className="w-4 h-4" />}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="px-3 pb-2 pt-1 border-t border-slate-50">
-                            <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
+                  {showSoundControls && (
+                      <>
+                      <div className="fixed inset-0 z-30" onClick={() => setShowSoundControls(false)}/>
+                      <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
+                        <div className="absolute left-1/2 -translate-x-1/2 w-full">
+                          <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
+                            <div className="space-y-0.5 mb-3 p-1">
+                                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Ambience</h4>
+                                {Object.entries(SOUNDS).map(([key, sound]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setSelectedSound(key as AmbientSoundType)}
+                                        className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                            selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        {sound.label}
+                                        {selectedSound === key && <Volume2 className="w-4 h-4" />}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="px-3 pb-2 pt-1 border-t border-slate-50">
+                                <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  </>
-              )}
-          </div>
+                      </>
+                  )}
+              </div>
+          )}
       </div>
 
     </div>
