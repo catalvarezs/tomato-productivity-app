@@ -65,7 +65,3 @@ export interface AppState {
   tasks: Task[];
   sessions: Session[];
 }
-
-export type TimerConfig = {
-  [key in TimerMode]: number; // minutes
-};
