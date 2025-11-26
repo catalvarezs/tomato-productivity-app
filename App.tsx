@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Timer, CheckSquare, BookOpen, Menu, X, Languages, ChevronDown, CheckCircle2, Wind } from 'lucide-react';
 import { AppView, AppState, Session, TaskStatus, Language } from './types';
 import { usePersistedState } from './hooks/usePersistedState';
@@ -37,11 +37,22 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   
+  const langMenuRef = useRef<HTMLDivElement>(null);
+  
   const { t, language, setLanguage, isTransitioning } = useLanguage();
 
   const handleSessionComplete = (session: Session) => {
     setSessions(prev => [...prev, session]);
   };
+
+  // Auto-scroll to language menu when opened
+  useEffect(() => {
+    if (isLangMenuOpen && langMenuRef.current) {
+      setTimeout(() => {
+        langMenuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [isLangMenuOpen]);
 
   const renderView = () => {
     switch (currentView) {
@@ -80,7 +91,7 @@ export default function App() {
         md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
       `}>
-        <div className="h-full flex flex-col p-6">
+        <div className="h-full flex flex-col p-6 overflow-y-auto">
           <div className="hidden md:flex items-center gap-3 mb-10 px-2 text-[#d62828]">
             <div className="bg-[#d62828]/10 p-2 rounded-xl">
                <TomatoIcon className="w-6 h-6" />
@@ -115,7 +126,7 @@ export default function App() {
             />
 
             {/* Language Selector in Sidebar */}
-            <div className="relative pt-4">
+            <div className="relative pt-4" ref={langMenuRef}>
                 <button
                     onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 ${isLangMenuOpen ? 'bg-slate-50' : ''}`}

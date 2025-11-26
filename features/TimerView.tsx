@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider } from '../components/ui';
 import { TimerMode, Session, TimerTechnique, AmbientSoundType } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -30,12 +30,6 @@ const SOUNDS: Record<AmbientSoundType, { label: string; url: string }> = {
   RAIN: { label: 'Heavy Rain', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
   FOREST: { label: 'Ocean Waves', url: 'https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg' },
   CAFE: { label: 'Coffee Shop', url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg' }
-};
-
-const MODE_META: Record<TimerMode, { icon: React.FC<any>; color: string }> = {
-  [TimerMode.FOCUS]: { icon: Zap, color: 'text-[#d62828]' },
-  [TimerMode.SHORT_BREAK]: { icon: Coffee, color: 'text-[#d62828]' },
-  [TimerMode.LONG_BREAK]: { icon: Brain, color: 'text-[#d62828]' },
 };
 
 export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
@@ -245,41 +239,26 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   };
 
   const totalTime = getDuration();
-  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
-  const radius = 120;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-  const CurrentIcon = MODE_META[mode].icon;
-
+  const timeRatio = totalTime > 0 ? timeLeft / totalTime : 0;
+  // Inverse ratio: 0 at start, 1 at end.
+  const inverseRatio = 1 - timeRatio;
+  
   return (
     <div 
         ref={containerRef}
         className={`
-            group flex flex-col items-center transition-all duration-500 ease-in-out
-            ${isZenMode 
-                ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen justify-center items-center overflow-hidden' 
-                : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 gap-8 justify-center animate-fade-in'
-            }
+            group flex flex-col items-center justify-between relative overflow-hidden transition-all duration-500 ease-in-out h-full w-full select-none
+            ${isZenMode ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen' : ''}
         `}
     >
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
-      {/* Add global styles for the breathing animation */}
-      <style>{`
-        @keyframes breathe {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.05); opacity: 0.6; }
-        }
-        .animate-breathe {
-          animation: breathe 6s ease-in-out infinite;
-        }
-      `}</style>
-
+      {/* Extreme Corner Button: Zen Mode */}
       <button 
         onClick={toggleZenMode}
         className={`
-            absolute top-6 right-6 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 
+            absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 
             ${isZenMode ? `bg-white shadow-sm transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-0'}` : ''}
         `}
         title={t.timer.controls.zen}
@@ -287,11 +266,11 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
       </button>
 
-      {/* 1. TOP SECTION */}
-      <div className={`flex flex-col items-center gap-4 w-full transition-all duration-500 ${isZenMode ? 'hidden' : 'flex'}`}>
+      {/* 1. TOP SECTION - Flexible Header */}
+      <div className={`flex-none flex flex-col items-center gap-4 w-full pt-6 pb-2 px-4 transition-all duration-500 z-40 ${isZenMode ? 'hidden' : 'flex'}`}>
          
          <div className="flex bg-slate-100 p-1 rounded-2xl shadow-inner w-full max-w-sm">
-            {(Object.keys(MODE_META) as TimerMode[]).map((m) => (
+            {(Object.values(TimerMode)).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -349,48 +328,30 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
          </div>
       </div>
 
-      {/* 2. CENTER SECTION: Hypnotic Timer */}
-      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'flex-none relative' : 'flex-1 w-full'}`}>
-        <div className="relative group/timer">
+      {/* 2. CENTER SECTION: Hypnotic Timer - Uses min-h-0 and flex-1 to auto-shrink if needed */}
+      <div className={`flex-1 min-h-0 flex items-center justify-center relative w-full z-0`}>
+        {/* Responsive Sizing: Fits width but bounded by height to prevent scroll. min() ensures it fits both dimensions. */}
+        {/* Adjusted to 45vh to ensure room for controls on small landscape screens */}
+        <div 
+            className="relative group/timer flex items-center justify-center aspect-square w-[min(80vw,45vh)]"
+            style={{ containerType: 'inline-size' }}
+        >
             
-            {/* Hypnotic Breathing Aura */}
+            {/* Hypnotic Aura */}
+            {/* Inset-10 creates a buffer so the blur doesn't hit the container edge hard */}
             <div 
                 className={`
-                    absolute inset-0 rounded-full blur-[60px] transition-all duration-1000 
-                    ${isActive ? 'bg-[#d62828] animate-breathe' : 'bg-slate-200 opacity-20 scale-90'}
-                `} 
+                    absolute inset-10 rounded-full blur-[60px] bg-[#d62828] transition-all duration-1000 ease-linear z-0
+                `}
+                style={{
+                   // Scale: Starts small (0.6), ends large (1.0)
+                   transform: `scale(${0.6 + (inverseRatio * 0.4)})`,
+                   // Opacity: Starts strong (0.75), ends faint (0.2) as time runs out
+                   opacity: 0.2 + (timeRatio * 0.55)
+                }}
             />
 
-            <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 relative z-10">
-              
-              {/* Glassy Track */}
-              <circle 
-                cx="170" cy="170" r={radius} 
-                stroke="#e2e8f0" 
-                strokeWidth="2" 
-                fill="rgba(255,255,255,0.5)" 
-                className="backdrop-blur-sm"
-              />
-              
-              {/* Progress Ring with Solid Color */}
-              <circle
-                cx="170"
-                cy="170"
-                r={radius}
-                stroke="#d62828"
-                strokeWidth="4"
-                fill="transparent"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                className={`transition-all duration-1000 ease-linear ${isActive ? 'opacity-100' : 'opacity-80'}`}
-              />
-            </svg>
-            
             <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
-              <div className={`p-3 rounded-full mb-4 transition-all duration-500 ${isActive ? 'text-[#d62828] scale-110' : 'text-slate-300 scale-100'}`}>
-                 <CurrentIcon className={`w-8 h-8 md:w-10 md:h-10 transition-colors duration-500`} />
-              </div>
               
               {isEditingTime ? (
                 <form onSubmit={handleCustomTimeSubmit} className="flex flex-col items-center w-full max-w-[200px]">
@@ -403,39 +364,34 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => handleCustomTimeSubmit()}
                       onKeyDown={(e) => e.key === 'Enter' && handleCustomTimeSubmit()}
-                      className="text-7xl md:text-8xl font-light tracking-tighter text-center bg-transparent outline-none caret-slate-300 leading-none text-slate-800 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-[#d62828]/20 p-0 m-0 border-none focus:ring-0"
+                      className="font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] leading-none text-slate-50 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-white/30 p-0 m-0 border-none focus:ring-0"
+                      style={{ fontSize: '22cqi' }}
                       placeholder={t.timer.edit.placeholder}
                   />
-                  <span className="text-xs font-semibold text-[#d62828] animate-fade-in mt-2 uppercase tracking-widest opacity-80">
+                  <span className="text-xs font-semibold text-slate-50/80 animate-fade-in mt-2 uppercase tracking-widest opacity-80 shadow-sm">
                     {t.timer.edit.label}
                   </span>
                 </form>
               ) : (
                 <div 
                   onClick={startEditing}
-                  className={`text-7xl md:text-8xl font-light tracking-tighter tabular-nums text-slate-800 cursor-pointer select-none transition-all hover:scale-105 active:scale-95 drop-shadow-sm ${isActive ? 'pointer-events-none' : ''}`}
+                  className={`font-light tracking-tighter tabular-nums text-slate-50 cursor-pointer select-none transition-all hover:scale-105 active:scale-95 ${isActive ? 'pointer-events-none' : ''}`}
+                  style={{ fontSize: '22cqi' }}
                   title="Click to edit duration"
                 >
                   {formatTime(timeLeft)}
                 </div>
-              )}
-
-              {!isEditingTime && (
-                <p className="text-slate-400 font-medium mt-4 uppercase tracking-widest text-xs md:text-sm h-4 transition-opacity duration-500">
-                  {isActive 
-                    ? (selectedSound !== 'NONE' ? SOUNDS[selectedSound].label : (mode === TimerMode.FOCUS ? t.timer.status.focusing : t.timer.status.resting)) 
-                    : t.timer.status.ready}
-                </p>
               )}
             </div>
         </div>
       </div>
 
       {/* 3. BOTTOM SECTION: Controls */}
+      {/* Sit within Flex flow to prevent overlaps on small screens */}
       <div className={`
-          flex items-center justify-center gap-8 z-30 transition-all duration-700
+          flex-none flex items-center justify-center gap-8 z-30 transition-all duration-700 pb-8
           ${isZenMode 
-            ? `absolute top-1/2 left-1/2 -translate-x-1/2 mt-[12rem] md:mt-[16rem] flex-none transition-opacity duration-700 ${isUserActive ? 'opacity-30 hover:opacity-100' : 'opacity-0 pointer-events-none'}` 
+            ? `transition-opacity duration-700 ${isUserActive ? 'opacity-30 hover:opacity-100' : 'opacity-0 pointer-events-none'}` 
             : 'w-full'
           }
       `}>
@@ -452,11 +408,11 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
           
           <button 
             onClick={toggleTimer}
-            className={`flex items-center justify-center rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+            className={`flex items-center justify-center rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 border border-slate-100 shadow-xl hover:shadow-2xl ${
               isActive 
-                ? 'bg-white border-2 border-slate-100 text-slate-900' 
-                : 'bg-[#d62828] text-white shadow-[#d62828]/30'
-            } ${isZenMode ? 'w-14 h-14' : 'w-20 h-20'}`}
+                ? 'bg-[#d62828]/5 text-[#d62828] border-[#d62828]/20' 
+                : 'bg-white text-slate-400 hover:bg-slate-50 hover:text-[#d62828]'
+            } ${isZenMode ? 'w-14 h-14 bg-white' : 'w-20 h-20'}`}
             title={isActive ? t.timer.controls.pause : t.timer.controls.play}
           >
             {isActive ? <Pause className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current`} /> : <Play className={`${isZenMode ? 'w-5 h-5' : 'w-8 h-8'} fill-current ml-1`} />}

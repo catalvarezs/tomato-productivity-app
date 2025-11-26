@@ -116,21 +116,11 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
   const [isUserActive, setIsUserActive] = useState(true);
   
   // Animation State
-  const [ringProgress, setRingProgress] = useState(0); // 0 = empty, 100 = full
   const [duration, setDuration] = useState(0);
   
   const timerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const activityTimeoutRef = useRef<number | null>(null);
-
-  // SVG Config (Identical to TimerView)
-  const radius = 120;
-  const circumference = 2 * Math.PI * radius;
-  
-  // Calculate stroke offset based on progress
-  // progress 0 -> offset = circumference (empty)
-  // progress 100 -> offset = 0 (full)
-  const strokeDashoffset = circumference - (ringProgress / 100) * circumference;
 
   // Native Fullscreen & Activity Tracker
   useEffect(() => {
@@ -192,28 +182,23 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
   const runPhase = (nextPhase: Phase) => {
     let phaseDuration = 0;
     let nextPhaseName: Phase = 'inhale';
-    let targetProgress = 0;
 
     switch (nextPhase) {
       case 'inhale':
         phaseDuration = pattern.inhale;
         nextPhaseName = 'holdIn';
-        targetProgress = 100; // Fill up
         break;
       case 'holdIn':
         phaseDuration = pattern.holdIn;
         nextPhaseName = 'exhale';
-        targetProgress = 100; // Stay full
         break;
       case 'exhale':
         phaseDuration = pattern.exhale;
         nextPhaseName = 'holdOut';
-        targetProgress = 0; // Empty
         break;
       case 'holdOut':
         phaseDuration = pattern.holdOut;
         nextPhaseName = 'inhale';
-        targetProgress = 0; // Stay empty
         break;
     }
 
@@ -226,21 +211,13 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
     setPhase(nextPhase);
     setDuration(phaseDuration);
     
-    // Small delay to ensure CSS transition picks up the new duration
-    requestAnimationFrame(() => {
-        setRingProgress(targetProgress);
-    });
-
     timerRef.current = window.setTimeout(() => {
         runPhase(nextPhaseName);
     }, phaseDuration * 1000);
   };
 
   useEffect(() => {
-    // Initial start: Set to empty, then trigger inhale
-    setRingProgress(0);
     setDuration(0);
-    
     // Start loop
     requestAnimationFrame(() => {
         runPhase('inhale');
@@ -260,81 +237,72 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
       }
   };
 
+  // Logic for visualizer state
+  // Inhale/HoldIn = Expanded (Full)
+  // Exhale/HoldOut = Contracted (Empty)
+  const isExpanded = phase === 'inhale' || phase === 'holdIn';
+
   return (
     <div 
         ref={containerRef}
         className={`
-            group flex flex-col items-center justify-center relative select-none bg-slate-50 transition-all duration-500 ease-in-out
-            ${isZenMode 
-                ? 'fixed inset-0 z-[100] w-screen h-screen justify-center items-center overflow-hidden' 
-                : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 justify-center animate-fade-in'
-            }
+            group flex flex-col items-center justify-between relative select-none bg-slate-50 transition-all duration-500 ease-in-out h-full w-full overflow-hidden
+            ${isZenMode ? 'fixed inset-0 z-[100] w-screen h-screen' : ''}
         `}
     >
         
-        {/* Controls Overlay */}
-        <div className={`absolute top-0 left-0 right-0 p-4 flex justify-between z-50 transition-opacity duration-500 ${isZenMode && !isUserActive ? 'opacity-0' : 'opacity-100'}`}>
-            <button 
-                onClick={onClose}
-                className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="text-sm font-medium">Back</span>
-            </button>
+        {/* Controls: Extreme Top Left */}
+        <button 
+            onClick={onClose}
+            className={`
+                absolute top-4 left-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all duration-300 z-50
+                ${isZenMode && !isUserActive ? 'opacity-0' : 'opacity-100'}
+            `}
+            title="Back"
+        >
+            <ArrowLeft className="w-5 h-5" />
+        </button>
 
-            <button 
-                onClick={toggleZenMode}
-                className={`p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 ${isZenMode ? 'bg-white shadow-sm' : ''}`}
-                title={isZenMode ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-                {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-            </button>
-        </div>
+        {/* Controls: Extreme Top Right */}
+        <button 
+            onClick={toggleZenMode}
+            className={`
+                absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50
+                ${isZenMode ? `bg-white shadow-sm ${!isUserActive ? 'opacity-0' : 'opacity-100'}` : ''}
+            `}
+            title={isZenMode ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+            {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+        </button>
 
-        {/* Center Content */}
-        <div className="flex flex-col items-center justify-center relative">
-            <div className="relative group/timer">
+        {/* Center Content - Matches TimerView Dimensions & Logic */}
+        <div className={`flex-1 min-h-0 flex items-center justify-center relative w-full z-0`}>
+            {/* Responsive Sizing: Fits width but bounded by height to prevent scroll. min() ensures it fits both dimensions. */}
+            {/* Adjusted to 45vh to prevent corner overlaps on landscape mobile */}
+            <div 
+                className="relative flex items-center justify-center aspect-square w-[min(80vw,45vh)]"
+                style={{ containerType: 'inline-size' }}
+            >
                 
-                {/* Aura / Glow Effect - Synced with Ring */}
+                {/* Hypnotic Aura: Matches Timer Physics */}
+                {/* Inset-10 creates buffer so blur doesn't clip */}
                 <div 
                     className={`
-                        absolute inset-0 rounded-full blur-[60px] transition-all
-                        ${phase === 'inhale' || phase === 'holdIn' ? 'bg-[#d62828] opacity-60 scale-110' : 'bg-[#d62828] opacity-20 scale-90'}
+                        absolute inset-10 rounded-full blur-[60px] bg-[#d62828] transition-all ease-in-out z-0
                     `}
-                    style={{ transitionDuration: `${duration}s`, transitionTimingFunction: 'ease-in-out' }}
+                    style={{ 
+                        transitionDuration: `${duration}s`,
+                        transform: `scale(${isExpanded ? 1 : 0.6})`,
+                        opacity: isExpanded ? 0.75 : 0.2
+                    }}
                 />
-
-                <svg viewBox="0 0 340 340" className="w-72 h-72 md:w-96 md:h-96 transform -rotate-90 relative z-10">
-                  {/* Glassy Track */}
-                  <circle 
-                    cx="170" cy="170" r={radius} 
-                    stroke="#e2e8f0" 
-                    strokeWidth="2" 
-                    fill="rgba(255,255,255,0.5)" 
-                    className="backdrop-blur-sm"
-                  />
-                  
-                  {/* Progress Ring */}
-                  <circle
-                    cx="170"
-                    cy="170"
-                    r={radius}
-                    stroke="#d62828"
-                    strokeWidth="4"
-                    fill="transparent"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className="transition-all ease-linear"
-                    style={{ transitionDuration: `${duration}s` }}
-                  />
-                </svg>
                 
-                {/* Central Text */}
+                {/* Central Text - Matches Timer Typography */}
                 <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center z-20">
                     <span 
                         key={phase} // Triggers animation on change
-                        className="text-2xl md:text-3xl font-light tracking-[0.2em] text-slate-800 uppercase animate-fade-in"
+                        className="font-light tracking-tighter text-slate-50 select-none animate-fade-in"
+                        style={{ fontSize: '22cqi' }}
                     >
                         {getInstructionText()}
                     </span>
