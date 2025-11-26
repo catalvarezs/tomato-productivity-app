@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2, CloudRain, Trees, Coffee, VolumeX } from 'lucide-react';
 import { Slider } from '../components/ui';
@@ -359,7 +358,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         {/* Adjusted to 45vh to ensure room for controls on small landscape screens */}
         <div 
             className="relative group/timer flex items-center justify-center aspect-square w-[min(80vw,45vh)]"
-            style={{ containerType: 'inline-size' }}
+            style={{ containerType: 'inline-size' } as any}
         >
             
             {/* Hypnotic Aura */}
@@ -389,7 +388,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => handleCustomTimeSubmit()}
                       onKeyDown={(e) => e.key === 'Enter' && handleCustomTimeSubmit()}
-                      className="font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] leading-none text-slate-50 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-white/30 p-0 m-0 border-none focus:ring-0 drop-shadow-none"
+                      className="font-light tracking-tighter text-center bg-transparent outline-none caret-transparent leading-none text-slate-50 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-white/30 p-0 m-0 border-none focus:ring-0 drop-shadow-none"
                       style={{ fontSize: '22cqi' }}
                       placeholder={t.timer.edit.placeholder}
                   />
@@ -448,10 +447,10 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                   <button 
                     onClick={() => setShowSoundControls(!showSoundControls)}
                     className={`
-                        flex items-center justify-center w-14 h-14 rounded-full bg-white border transition-all active:scale-95 shadow-sm
+                        flex items-center justify-center w-14 h-14 rounded-full border transition-all active:scale-95 shadow-sm
                         ${selectedSound !== 'NONE'
-                            ? 'border-[#d62828]/20 text-[#d62828]' 
-                            : 'border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200'
+                            ? 'bg-[#d62828]/5 border-[#d62828]/20 text-[#d62828]' 
+                            : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200'
                         }
                     `}
                     title={t.timer.controls.sound}
