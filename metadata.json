@@ -1,0 +1,5 @@
+{
+  "name": "Tomato",
+  "description": "A minimalist, privacy-first productivity dashboard featuring a customizable focus timer, task manager, and productivity methodology guide. Built with React 19, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": []
+}
