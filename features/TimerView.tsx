@@ -50,6 +50,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const activityTimeoutRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const soundMenuRef = useRef<HTMLDivElement>(null);
 
   // Helper to get translated labels
   const getTechniqueLabel = (key: TimerTechnique) => {
@@ -142,6 +143,16 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       audio.pause();
     }
   }, [isActive, selectedSound]);
+
+  // Auto-scroll sound menu into view
+  useEffect(() => {
+    if (showSoundControls && soundMenuRef.current) {
+        // Short delay to allow render
+        setTimeout(() => {
+            soundMenuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 150);
+    }
+  }, [showSoundControls]);
 
   const handleComplete = useCallback(() => {
     setIsActive(false);
@@ -247,24 +258,26 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     <div 
         ref={containerRef}
         className={`
-            group flex flex-col items-center justify-between relative overflow-hidden transition-all duration-500 ease-in-out h-full w-full select-none
-            ${isZenMode ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen' : ''}
+            group flex flex-col items-center justify-between relative transition-all duration-500 ease-in-out min-h-full w-full select-none
+            ${isZenMode ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen overflow-y-auto' : ''}
         `}
     >
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
-      {/* Extreme Corner Button: Zen Mode */}
-      <button 
-        onClick={toggleZenMode}
-        className={`
-            absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 
-            ${isZenMode ? `bg-white shadow-sm transition-opacity duration-500 ${isUserActive ? 'opacity-100' : 'opacity-0'}` : ''}
-        `}
-        title={t.timer.controls.zen}
-      >
-        {isZenMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-      </button>
+      {/* Floating Button: Exit Zen Mode (Only visible in Zen Mode) */}
+      {isZenMode && (
+        <button 
+            onClick={toggleZenMode}
+            className={`
+                absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#d62828] transition-all duration-300 z-50 bg-white shadow-sm
+                ${isUserActive ? 'opacity-100' : 'opacity-0'}
+            `}
+            title={t.timer.controls.zen}
+        >
+            <Minimize2 className="w-5 h-5" />
+        </button>
+      )}
 
       {/* 1. TOP SECTION - Flexible Header */}
       <div className={`flex-none flex flex-col items-center gap-4 w-full pt-6 pb-2 px-4 transition-all duration-500 z-40 ${isZenMode ? 'hidden' : 'flex'}`}>
@@ -285,46 +298,57 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
             ))}
          </div>
 
-         <div className="relative z-30">
-            <button 
-                onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-sm font-medium hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
-            >
-                <span>{getTechniqueLabel(technique)}</span>
-                <ChevronDown className={`w-3 h-3 transition-transform ${showTechniqueMenu ? 'rotate-180' : ''}`} />
-            </button>
+         <div className="flex items-center gap-2 z-30">
+            <div className="relative">
+                <button 
+                    onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-sm font-medium hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
+                >
+                    <span>{getTechniqueLabel(technique)}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showTechniqueMenu ? 'rotate-180' : ''}`} />
+                </button>
 
-            {showTechniqueMenu && (
-                <>
-                <div className="fixed inset-0 z-30" onClick={() => setShowTechniqueMenu(false)} />
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
-                  <div className="absolute left-1/2 -translate-x-1/2 w-full">
-                      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
-                        {Object.keys(TECHNIQUES_CONFIG).map((key) => {
-                            const techKey = key as TimerTechnique;
-                            return (
-                                <button
-                                    key={techKey}
-                                    onClick={() => {
-                                        setTechnique(techKey);
-                                        setShowTechniqueMenu(false);
-                                    }}
-                                    className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                        technique === techKey 
-                                        ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
-                                        : 'text-slate-600 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    {getTechniqueLabel(techKey)}
-                                    {technique === techKey && <CheckCircle2 className="w-4 h-4" />}
-                                </button>
-                            );
-                        })}
-                      </div>
-                  </div>
-                </div>
-                </>
-            )}
+                {showTechniqueMenu && (
+                    <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowTechniqueMenu(false)} />
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
+                    <div className="absolute left-1/2 -translate-x-1/2 w-full">
+                        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-fade-in-up origin-top">
+                            {Object.keys(TECHNIQUES_CONFIG).map((key) => {
+                                const techKey = key as TimerTechnique;
+                                return (
+                                    <button
+                                        key={techKey}
+                                        onClick={() => {
+                                            setTechnique(techKey);
+                                            setShowTechniqueMenu(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                            technique === techKey 
+                                            ? 'bg-[#d62828]/10 text-[#d62828] font-medium' 
+                                            : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        {getTechniqueLabel(techKey)}
+                                        {technique === techKey && <CheckCircle2 className="w-4 h-4" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    </div>
+                    </>
+                )}
+            </div>
+
+            {/* Enter Zen Mode Button (Integrated in Header) */}
+            <button 
+                onClick={toggleZenMode}
+                className="p-2.5 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-[#d62828] hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
+                title={t.timer.controls.zen}
+            >
+                <Maximize2 className="w-4 h-4" />
+            </button>
          </div>
       </div>
 
@@ -364,7 +388,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => handleCustomTimeSubmit()}
                       onKeyDown={(e) => e.key === 'Enter' && handleCustomTimeSubmit()}
-                      className="font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] leading-none text-slate-50 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-white/30 p-0 m-0 border-none focus:ring-0"
+                      className="font-light tracking-tighter text-center bg-transparent outline-none caret-[#d62828] leading-none text-slate-50 w-full [&::-webkit-inner-spin-button]:appearance-none selection:bg-white/30 p-0 m-0 border-none focus:ring-0 drop-shadow-none"
                       style={{ fontSize: '22cqi' }}
                       placeholder={t.timer.edit.placeholder}
                   />
@@ -431,9 +455,10 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
                   {showSoundControls && (
                       <>
                       <div className="fixed inset-0 z-30" onClick={() => setShowSoundControls(false)}/>
-                      <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
+                      {/* Dropdown opens DOWNWARDS */}
+                      <div ref={soundMenuRef} className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
                         <div className="absolute left-1/2 -translate-x-1/2 w-full">
-                          <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-bottom">
+                          <div className="bg-white p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-top">
                             <div className="space-y-0.5 mb-3 p-1">
                                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">{t.timer.controls.sound}</h4>
                                 {Object.entries(SOUNDS).map(([key, sound]) => (
@@ -460,6 +485,9 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               </div>
           )}
       </div>
+      
+      {/* Spacer to allow scrolling when sound menu is open */}
+      {showSoundControls && <div className="h-72 w-full flex-none transition-all" />}
 
     </div>
   );

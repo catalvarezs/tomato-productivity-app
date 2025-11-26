@@ -38,6 +38,7 @@ export default function App() {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   
   const { t, language, setLanguage, isTransitioning } = useLanguage();
 
@@ -91,7 +92,10 @@ export default function App() {
         md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
       `}>
-        <div className="h-full flex flex-col p-6 overflow-y-auto">
+        <div 
+            ref={sidebarRef}
+            className="h-full flex flex-col p-6 overflow-y-auto"
+        >
           <div className="hidden md:flex items-center gap-3 mb-10 px-2 text-[#d62828]">
             <div className="bg-[#d62828]/10 p-2 rounded-xl">
                <TomatoIcon className="w-6 h-6" />
@@ -148,6 +152,10 @@ export default function App() {
                                         setLanguage(langKey);
                                         setIsLangMenuOpen(false);
                                         closeMobileMenu();
+                                        // Scroll sidebar back to top
+                                        setTimeout(() => {
+                                            sidebarRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }, 300);
                                     }}
                                     className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
                                         language === langKey
