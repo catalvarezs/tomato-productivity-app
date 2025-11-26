@@ -57,6 +57,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const activityTimeoutRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const getDuration = useCallback(() => {
     if (technique === 'CUSTOM') return customConfig[mode] * 60;
@@ -69,11 +70,21 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const [editValue, setEditValue] = useState('');
   const [interruptions, setInterruptions] = useState(0);
 
-  // Zen Mode Activity Tracker
+  // Native Fullscreen & Activity Tracker
   useEffect(() => {
+    // 1. Sync React state with Browser Native Fullscreen (handling ESC key)
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsZenMode(false);
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    // 2. Mouse Activity Logic
     if (!isZenMode) {
         setIsUserActive(true);
-        return;
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }
 
     const handleMouseMove = () => {
@@ -88,10 +99,11 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
     // Trigger initial check
     handleMouseMove();
-
     window.addEventListener('mousemove', handleMouseMove);
+    
     return () => {
         window.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
         if (activityTimeoutRef.current) window.clearTimeout(activityTimeoutRef.current);
     };
   }, [isZenMode]);
@@ -208,8 +220,28 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       setInterruptions(0);
   };
 
-  const toggleZenMode = () => {
-      setIsZenMode(!isZenMode);
+  const toggleZenMode = async () => {
+      if (!isZenMode) {
+          // Enter Fullscreen
+          if (containerRef.current) {
+              try {
+                  await containerRef.current.requestFullscreen();
+              } catch (err) {
+                  console.error("Error attempting to enable fullscreen:", err);
+              }
+          }
+          setIsZenMode(true);
+      } else {
+          // Exit Fullscreen
+          if (document.fullscreenElement) {
+              try {
+                await document.exitFullscreen();
+              } catch (err) {
+                console.error("Error attempting to exit fullscreen:", err);
+              }
+          }
+          setIsZenMode(false);
+      }
   };
 
   // Visuals
@@ -221,13 +253,16 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
   const CurrentIcon = MODE_META[mode].icon;
 
   return (
-    <div className={`
-        group flex flex-col items-center transition-all duration-500 ease-in-out
-        ${isZenMode 
-            ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen justify-center gap-14' // gap-14 is approx 3.5rem (56px), matching button height
-            : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 gap-8 justify-center animate-fade-in'
-        }
-    `}>
+    <div 
+        ref={containerRef}
+        className={`
+            group flex flex-col items-center transition-all duration-500 ease-in-out
+            ${isZenMode 
+                ? 'fixed inset-0 z-[100] bg-slate-50 w-screen h-screen justify-center items-center overflow-hidden' 
+                : 'min-h-full w-full max-w-lg mx-auto py-8 px-4 gap-8 justify-center animate-fade-in'
+            }
+        `}
+    >
       
       <audio ref={audioRef} loop crossOrigin="anonymous" />
 
@@ -306,7 +341,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       </div>
 
       {/* 2. CENTER SECTION: Timer Visualization */}
-      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'scale-110 flex-none' : 'flex-1 w-full'}`}>
+      <div className={`flex flex-col items-center justify-center relative transition-all duration-700 ${isZenMode ? 'scale-110 flex-none relative' : 'flex-1 w-full'}`}>
         <div className="relative group/timer">
             
             {/* Dynamic Glow - Uniform Color */}
@@ -412,11 +447,11 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
       </div>
 
       {/* 3. BOTTOM SECTION: Controls */}
-      {/* In Zen Mode, Reset and Music buttons are removed, Play button floats transparently */}
+      {/* Zen Mode: Absolute positioning to center controls relative to the screen center, offset by timer height */}
       <div className={`
           flex items-center justify-center gap-8 z-30 transition-all duration-700
           ${isZenMode 
-            ? `flex-none transition-opacity duration-700 ${isUserActive ? 'opacity-30 hover:opacity-100' : 'opacity-0 pointer-events-none'}` 
+            ? `absolute top-1/2 left-1/2 -translate-x-1/2 mt-[12rem] md:mt-[16rem] flex-none transition-opacity duration-700 ${isUserActive ? 'opacity-30 hover:opacity-100' : 'opacity-0 pointer-events-none'}` 
             : 'w-full'
           }
       `}>
