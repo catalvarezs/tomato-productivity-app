@@ -39,6 +39,26 @@ const PATTERNS: BreathingPattern[] = [
   }
 ];
 
+// Helper Component defined before use to prevent ReferenceError
+const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
+    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
+        <div className="flex items-start gap-5">
+            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <Icon className="w-6 h-6" />
+            </div>
+            <div className="space-y-3">
+                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+                <p className="text-slate-600 leading-relaxed text-sm">
+                    {desc}
+                </p>
+                <div className="flex items-center gap-2 pt-2">
+                    <Badge color="red">{benefit}</Badge>
+                </div>
+            </div>
+        </div>
+    </Card>
+);
+
 export const BreathingView: React.FC = () => {
   const { t } = useLanguage();
   const [selectedPattern, setSelectedPattern] = useState<BreathingPattern | null>(null);
@@ -61,8 +81,10 @@ export const BreathingView: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-6">
         {PATTERNS.map((pattern) => {
-            // Mapping keys to translation object
-            const cardT = t.breathing.cards[pattern.nameKey as keyof typeof t.breathing.cards];
+            // Safe access to translation keys
+            const cardKey = pattern.nameKey as keyof typeof t.breathing.cards;
+            const cardT = t.breathing.cards[cardKey] || { title: pattern.id, desc: '', benefit: '' };
+            
             const icon = pattern.id === 'box' ? Box : pattern.id === 'relax' ? Wind : Heart;
             
             return (
@@ -80,25 +102,6 @@ export const BreathingView: React.FC = () => {
     </div>
   );
 };
-
-const MethodCard: React.FC<{ title: string; desc: string; benefit: string; icon: any }> = ({ title, desc, benefit, icon: Icon }) => (
-    <Card className="p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#d62828]/10 hover:border-[#d62828]/30 group h-full">
-        <div className="flex items-start gap-5">
-            <div className="p-3 rounded-xl bg-[#d62828]/10 text-[#d62828] group-hover:scale-110 transition-transform duration-300 shrink-0">
-                <Icon className="w-6 h-6" />
-            </div>
-            <div className="space-y-3">
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-                <p className="text-slate-600 leading-relaxed text-sm">
-                    {desc}
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                    <Badge color="red">{benefit}</Badge>
-                </div>
-            </div>
-        </div>
-    </Card>
-);
 
 // --- VISUALIZER COMPONENT ---
 
@@ -281,7 +284,7 @@ const BreathingVisualizer: React.FC<VisualizerProps> = ({ pattern, onClose }) =>
             {/* Adjusted to 45vh to prevent corner overlaps on landscape mobile */}
             <div 
                 className="relative flex items-center justify-center aspect-square w-[min(80vw,45vh)]"
-                style={{ containerType: 'inline-size' }}
+                style={{ containerType: 'inline-size' } as React.CSSProperties}
             >
                 
                 {/* Hypnotic Aura: Matches Timer Physics */}
