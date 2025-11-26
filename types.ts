@@ -61,7 +61,3 @@ export interface BreathingPattern {
   exhale: number;
   holdOut: number;
 }
-export interface AppState {
-  tasks: Task[];
-  sessions: Session[];
-}

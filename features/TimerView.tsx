@@ -358,7 +358,7 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         {/* Adjusted to 45vh to ensure room for controls on small landscape screens */}
         <div 
             className="relative group/timer flex items-center justify-center aspect-square w-[min(80vw,45vh)]"
-            style={{ containerType: 'inline-size' } as React.CSSProperties}
+            style={{ containerType: 'inline-size' }}
         >
             
             {/* Hypnotic Aura */}
