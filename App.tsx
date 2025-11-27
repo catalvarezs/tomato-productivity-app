@@ -21,12 +21,14 @@ const INITIAL_STATE: AppState = {
 
 // Custom Tomato Icon
 const TomatoIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 9a7 7 0 1 1 0 14 7 7 0 0 1 0-14z" />
-    <path d="M12 9c-1.5-2.5-4-3-4-3" />
-    <path d="M12 9c1.5-2.5 4-3 4-3" />
-    <path d="M12 9V3" />
-    <path d="M12 5h4" />
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="50" cy="52" r="40" fill="#d62828" />
+    <path d="M22 40 Q 25 25 40 22" stroke="white" strokeWidth="5" strokeLinecap="round" strokeOpacity="0.3" />
+    <path d="M50 18 L 35 30 Q 42 35 50 18 Z" fill="#064e3b" />
+    <path d="M50 18 L 65 30 Q 58 35 50 18 Z" fill="#064e3b" />
+    <path d="M50 18 L 25 20 Q 35 15 50 18 Z" fill="#064e3b" />
+    <path d="M50 18 L 75 20 Q 65 15 50 18 Z" fill="#064e3b" />
+    <path d="M50 18 Q 55 5 65 8" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
   </svg>
 );
 
@@ -76,9 +78,9 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex overflow-hidden selection:bg-[#d62828]/20 selection:text-[#d62828]">
       
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 z-50">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 z-[200]">
         <div className="flex items-center gap-2 text-[#d62828]">
-           <TomatoIcon className="w-6 h-6" />
+           <TomatoIcon className="w-8 h-8" />
            <span className="font-bold text-lg tracking-tight">Tomato</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
@@ -97,10 +99,10 @@ export default function App() {
             className="h-full flex flex-col p-6 overflow-y-auto"
         >
           <div className="hidden md:flex items-center gap-3 mb-10 px-2 text-[#d62828]">
-            <div className="bg-[#d62828]/10 p-2 rounded-xl">
-               <TomatoIcon className="w-6 h-6" />
+            <div className="w-10 h-10">
+               <TomatoIcon className="w-full h-full" />
             </div>
-            <span className="font-bold text-xl tracking-tight">Tomato</span>
+            <span className="font-bold text-2xl tracking-tight">Tomato</span>
           </div>
 
           <nav className="space-y-2 flex-1 mt-16 md:mt-0">
