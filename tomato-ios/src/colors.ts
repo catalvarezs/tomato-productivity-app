@@ -1,0 +1,27 @@
+export const COLORS = {
+  primary: '#d62828',
+  primaryLight: 'rgba(214, 40, 40, 0.1)',
+  primaryMedium: 'rgba(214, 40, 40, 0.2)',
+  background: '#f8fafc',
+  card: '#ffffff',
+  text: {
+    primary: '#0f172a',
+    secondary: '#64748b',
+    tertiary: '#94a3b8',
+    light: '#f8fafc',
+  },
+  border: '#e2e8f0',
+  borderLight: '#f1f5f9',
+  slate: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    300: '#cbd5e1',
+    400: '#94a3b8',
+    500: '#64748b',
+    600: '#475569',
+    700: '#334155',
+    800: '#1e293b',
+    900: '#0f172a',
+  },
+};
