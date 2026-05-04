@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2, CloudRain, Trees, Coffee, VolumeX } from 'lucide-react';
+import { Play, Pause, RotateCcw, Music2, Volume2, ChevronDown, CheckCircle2, Maximize2, Minimize2, CloudRain, Trees, Coffee, VolumeX, SkipBack, SkipForward, LogOut, ExternalLink } from 'lucide-react';
 import { Slider } from '../components/ui';
 import { TimerMode, Session, TimerTechnique, AmbientSoundType } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSpotify } from '../contexts/SpotifyContext';
 
 interface TimerViewProps {
   onSessionComplete: (session: Session) => void;
@@ -32,17 +33,198 @@ const SOUNDS: Record<AmbientSoundType, { label: string; url: string; icon: any }
   CAFE: { label: 'Coffee Shop', url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', icon: Coffee }
 };
 
+// ─── Spotify icon SVG ────────────────────────────────────────────────────────
+
+const SpotifyIcon = ({ size = 16, color = '#1DB954' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+  </svg>
+);
+
+// ─── Spotify Panel ────────────────────────────────────────────────────────────
+
+const SpotifyPanel: React.FC = () => {
+  const spotify = useSpotify();
+  const [clientIdInput, setClientIdInput] = useState(spotify.clientId);
+  const [showSetup, setShowSetup] = useState(false);
+  const [uriInput, setUriInput] = useState('');
+
+  const needsSetup = !spotify.clientId;
+
+  if (needsSetup || showSetup) {
+    return (
+      <div className="p-1 space-y-3">
+        <div className="flex items-center gap-2 px-2 pt-1">
+          <SpotifyIcon size={14} />
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Configurar Spotify</span>
+        </div>
+        <div className="px-2 space-y-2">
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Necesitas un <strong>Client ID</strong> de{' '}
+            <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-[#1DB954] underline inline-flex items-center gap-0.5">developer.spotify.com <ExternalLink className="w-2.5 h-2.5" /></a>.
+            Añade <code className="bg-slate-100 px-1 rounded text-[10px]">{window.location.origin}</code> como Redirect URI.
+          </p>
+          <input
+            type="text"
+            value={clientIdInput}
+            onChange={e => setClientIdInput(e.target.value)}
+            placeholder="Client ID de Spotify..."
+            className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#1DB954] focus:ring-1 focus:ring-[#1DB954]/20 text-slate-700 placeholder:text-slate-400 transition-all"
+          />
+          <button
+            onClick={() => { spotify.setClientId(clientIdInput); setShowSetup(false); }}
+            disabled={!clientIdInput.trim()}
+            className="w-full py-2 rounded-xl bg-[#1DB954] text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#18a349] active:scale-95 transition-all"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!spotify.isConnected) {
+    return (
+      <div className="p-1 space-y-3">
+        <div className="flex items-center justify-between px-2 pt-1">
+          <div className="flex items-center gap-2">
+            <SpotifyIcon size={14} />
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spotify</span>
+          </div>
+          <button onClick={() => setShowSetup(true)} className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors">Cambiar ID</button>
+        </div>
+        <div className="px-2 pb-1 space-y-2">
+          <p className="text-xs text-slate-500">Conecta tu cuenta <strong>Spotify Premium</strong> para escuchar música mientras te concentras.</p>
+          <button
+            onClick={spotify.login}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1DB954] text-white text-sm font-semibold hover:bg-[#18a349] active:scale-95 transition-all"
+          >
+            <SpotifyIcon size={16} color="#fff" />
+            Iniciar sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Connected state
+  const { isReady, isPlaying, currentTrack, trackProgress, volume } = spotify;
+
+  return (
+    <div className="p-1 space-y-2">
+      {/* Header */}
+      <div className="flex items-center justify-between px-2 pt-1">
+        <div className="flex items-center gap-2">
+          <SpotifyIcon size={14} />
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spotify</span>
+        </div>
+        <button onClick={spotify.logout} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" title="Desconectar">
+          <LogOut className="w-3 h-3" />
+        </button>
+      </div>
+
+      {/* Track info */}
+      {currentTrack ? (
+        <div className="px-2 flex items-center gap-3">
+          {currentTrack.albumArt ? (
+            <img
+              src={currentTrack.albumArt}
+              alt={currentTrack.name}
+              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover shadow-sm"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center">
+              <SpotifyIcon size={18} color="#94a3b8" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-800 truncate">{currentTrack.name}</p>
+            <p className="text-[10px] text-slate-500 truncate">{currentTrack.artist}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="px-2">
+          {isReady ? (
+            <div className="space-y-1.5">
+              <p className="text-xs text-slate-500">Dispositivo listo. Reproduce desde Spotify y el control aparecerá aquí.</p>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={uriInput}
+                  onChange={e => setUriInput(e.target.value)}
+                  placeholder="spotify:playlist:..."
+                  className="flex-1 text-[10px] px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#1DB954] text-slate-700 placeholder:text-slate-400 transition-all"
+                />
+                <button
+                  onClick={() => uriInput.startsWith('spotify:') && spotify.playUri(uriInput)}
+                  disabled={!uriInput.startsWith('spotify:')}
+                  className="px-2 py-1.5 rounded-lg bg-[#1DB954] text-white text-[10px] font-semibold disabled:opacity-40 hover:bg-[#18a349] transition-all"
+                >
+                  Play
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 text-center py-2">Iniciando reproductor…</p>
+          )}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {currentTrack && (
+        <div className="px-2">
+          <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#1DB954] transition-all duration-300"
+              style={{ width: `${trackProgress * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-4 px-2 pb-1">
+        <button onClick={spotify.previous} className="p-1.5 text-slate-400 hover:text-slate-700 transition-colors active:scale-90">
+          <SkipBack className="w-4 h-4" />
+        </button>
+        <button
+          onClick={spotify.togglePlay}
+          disabled={!isReady}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-[#1DB954] text-white disabled:opacity-40 hover:bg-[#18a349] active:scale-95 transition-all shadow-md shadow-[#1DB954]/20"
+        >
+          {isPlaying
+            ? <Pause className="w-4 h-4 fill-white" />
+            : <Play className="w-4 h-4 fill-white ml-0.5" />
+          }
+        </button>
+        <button onClick={spotify.next} className="p-1.5 text-slate-400 hover:text-slate-700 transition-colors active:scale-90">
+          <SkipForward className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Volume */}
+      <div className="px-3 pb-1 border-t border-slate-50 pt-2">
+        <Slider min={0} max={1} step={0.01} value={volume} onChange={e => spotify.setVolume(parseFloat(e.target.value))} />
+      </div>
+    </div>
+  );
+};
+
+// ─── Timer View ───────────────────────────────────────────────────────────────
+
 export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
-  const { t } = useLanguage(); // Consume Context
+  const { t } = useLanguage();
+  const spotify = useSpotify();
 
   const [technique, setTechnique] = useState<TimerTechnique>('POMODORO');
   const [mode, setMode] = useState<TimerMode>(TimerMode.FOCUS);
   const [customConfig, setCustomConfig] = useState(TECHNIQUES_CONFIG.CUSTOM.config);
-  
+
   // Audio State
   const [selectedSound, setSelectedSound] = useState<AmbientSoundType>('NONE');
   const [volume, setVolume] = useState(0.5);
   const [showSoundControls, setShowSoundControls] = useState(false);
+  const [soundTab, setSoundTab] = useState<'ambient' | 'spotify'>('ambient');
   const [showTechniqueMenu, setShowTechniqueMenu] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [isUserActive, setIsUserActive] = useState(true);
@@ -445,54 +627,92 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
           {!isZenMode && (
               <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowSoundControls(!showSoundControls)}
                     className={`
                         flex items-center justify-center w-14 h-14 rounded-full border transition-all active:scale-95 shadow-sm
-                        ${selectedSound !== 'NONE'
-                            ? 'bg-[#d62828]/5 border-[#d62828]/20 text-[#d62828]' 
+                        ${spotify.isPlaying
+                            ? 'bg-[#1DB954]/5 border-[#1DB954]/30 text-[#1DB954]'
+                            : selectedSound !== 'NONE'
+                            ? 'bg-[#d62828]/5 border-[#d62828]/20 text-[#d62828]'
                             : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-200'
                         }
                     `}
                     title={t.timer.controls.sound}
                   >
-                    <Music2 className="w-5 h-5" />
+                    {spotify.isPlaying
+                      ? <SpotifyIcon size={20} color="#1DB954" />
+                      : <Music2 className="w-5 h-5" />
+                    }
                   </button>
 
                   {showSoundControls && (
                       <>
                       <div className="fixed inset-0 z-30" onClick={() => setShowSoundControls(false)}/>
-                      {/* Dropdown opens DOWNWARDS */}
-                      <div ref={soundMenuRef} className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-64 max-w-[calc(100vw-2rem)] z-40">
+                      <div ref={soundMenuRef} className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-72 max-w-[calc(100vw-2rem)] z-40">
                         <div className="absolute left-1/2 -translate-x-1/2 w-full">
-                          <div className="bg-white/95 backdrop-blur-xl p-2 rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-top">
-                            <div className="space-y-0.5 mb-3 p-1">
-                                <div className="flex items-center justify-between mb-2 px-2">
-                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.timer.controls.sound}</h4>
-                                    <span className="text-[10px] font-bold text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded-md">{Math.round(volume * 100)}%</span>
+                          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-100 animate-fade-in-up origin-top overflow-hidden">
+
+                            {/* Tab switcher */}
+                            <div className="flex border-b border-slate-100">
+                              <button
+                                onClick={() => setSoundTab('ambient')}
+                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
+                                  soundTab === 'ambient'
+                                    ? 'text-[#d62828] border-b-2 border-[#d62828] bg-[#d62828]/5'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                              >
+                                <Music2 className="w-3.5 h-3.5" />
+                                Ambiente
+                              </button>
+                              <button
+                                onClick={() => setSoundTab('spotify')}
+                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
+                                  soundTab === 'spotify'
+                                    ? 'text-[#1DB954] border-b-2 border-[#1DB954] bg-[#1DB954]/5'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                              >
+                                <SpotifyIcon size={13} color={soundTab === 'spotify' ? '#1DB954' : '#94a3b8'} />
+                                Spotify
+                              </button>
+                            </div>
+
+                            {/* Tab content */}
+                            {soundTab === 'ambient' ? (
+                              <div className="p-2">
+                                <div className="space-y-0.5 mb-3 p-1">
+                                    <div className="flex items-center justify-between mb-2 px-2">
+                                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.timer.controls.sound}</h4>
+                                        <span className="text-[10px] font-bold text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded-md">{Math.round(volume * 100)}%</span>
+                                    </div>
+                                    {Object.entries(SOUNDS).map(([key, sound]) => {
+                                        const SoundIcon = sound.icon;
+                                        return (
+                                            <button
+                                                key={key}
+                                                onClick={() => setSelectedSound(key as AmbientSoundType)}
+                                                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
+                                                    selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <SoundIcon className="w-4 h-4 opacity-70" />
+                                                    <span>{sound.label}</span>
+                                                </div>
+                                                {selectedSound === key && <Volume2 className="w-4 h-4" />}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                                {Object.entries(SOUNDS).map(([key, sound]) => {
-                                    const SoundIcon = sound.icon;
-                                    return (
-                                        <button
-                                            key={key}
-                                            onClick={() => setSelectedSound(key as AmbientSoundType)}
-                                            className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors flex justify-between items-center ${
-                                                selectedSound === key ? 'bg-[#d62828]/10 text-[#d62828] font-medium' : 'text-slate-600 hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <SoundIcon className="w-4 h-4 opacity-70" />
-                                                <span>{sound.label}</span>
-                                            </div>
-                                            {selectedSound === key && <Volume2 className="w-4 h-4" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="px-3 pb-2 pt-1 border-t border-slate-50">
-                                <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
-                            </div>
+                                <div className="px-3 pb-2 pt-1 border-t border-slate-50">
+                                    <Slider min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} />
+                                </div>
+                              </div>
+                            ) : (
+                              <SpotifyPanel />
+                            )}
                           </div>
                         </div>
                       </div>
