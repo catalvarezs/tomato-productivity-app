@@ -8,8 +8,8 @@ import {
   Modal,
   TextInput,
   Image,
-  Slider as RNSlider,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { Play, Pause, RotateCcw, Music2, CloudRain, Waves, Coffee, VolumeX, ChevronDown, CheckCircle2, SkipBack, SkipForward, LogOut, ExternalLink } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
@@ -171,7 +171,7 @@ const SpotifyPanel: React.FC = () => {
       {/* Volume */}
       <View style={sp.volumeRow}>
         <VolumeX size={12} color={COLORS.slate[400]} />
-        <RNSlider
+        <Slider
           style={{ flex: 1, marginHorizontal: 4 }}
           minimumValue={0}
           maximumValue={1}
@@ -273,14 +273,12 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     }
   };
 
-  // Update timer when technique or mode changes
   useEffect(() => {
     setIsActive(false);
     setTimeLeft(getDuration());
     setInterruptions(0);
   }, [technique, mode, getDuration]);
 
-  // Glow animation synced to timer progress
   useEffect(() => {
     const totalTime = getDuration();
     const timeRatio = totalTime > 0 ? timeLeft / totalTime : 0;
@@ -302,7 +300,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     ]).start();
   }, [timeLeft]);
 
-  // Audio management
   useEffect(() => {
     let isMounted = true;
 
@@ -355,7 +352,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
     setInterruptions(0);
   }, [mode, getDuration, onSessionComplete, interruptions]);
 
-  // Countdown
   useEffect(() => {
     if (!isActive) return;
     if (timeLeft === 0) {
@@ -409,7 +405,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
 
   return (
     <View style={styles.container}>
-      {/* Mode Selector */}
       <View style={styles.modeRow}>
         {modes.map((m) => (
           <TouchableOpacity
@@ -424,15 +419,12 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         ))}
       </View>
 
-      {/* Technique selector */}
       <TouchableOpacity style={styles.techniqueBtn} onPress={() => setShowTechniqueModal(true)}>
         <Text style={styles.techniqueBtnText}>{getTechniqueLabel(technique)}</Text>
         <ChevronDown size={14} color={COLORS.slate[500]} />
       </TouchableOpacity>
 
-      {/* Timer Circle */}
       <View style={styles.timerWrapper}>
-        {/* Glow layers */}
         <Animated.View
           style={[
             styles.glowOuter,
@@ -446,7 +438,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
           ]}
         />
 
-        {/* Circle */}
         <View style={styles.timerCircle}>
           {isEditingTime ? (
             <View style={styles.editContainer}>
@@ -478,7 +469,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         </View>
       </View>
 
-      {/* Controls */}
       <View style={styles.controls}>
         <TouchableOpacity onPress={resetTimer} style={styles.controlBtn}>
           <RotateCcw size={22} color={COLORS.slate[400]} />
@@ -510,7 +500,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Technique Modal */}
       <Modal visible={showTechniqueModal} transparent animationType="fade" onRequestClose={() => setShowTechniqueModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTechniqueModal(false)}>
           <View style={styles.modalCard}>
@@ -531,11 +520,9 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* Sound Modal */}
       <Modal visible={showSoundModal} transparent animationType="fade" onRequestClose={() => setShowSoundModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowSoundModal(false)}>
           <View style={[styles.modalCard, { padding: 0, overflow: 'hidden' }]}>
-            {/* Tab header */}
             <View style={styles.soundTabHeader}>
               <TouchableOpacity
                 onPress={() => setSoundTab('ambient')}
@@ -557,7 +544,6 @@ export const TimerView: React.FC<TimerViewProps> = ({ onSessionComplete }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Tab content — inner TouchableOpacity prevents modal dismiss on content tap */}
             <TouchableOpacity activeOpacity={1}>
               {soundTab === 'ambient' ? (
                 <View style={{ padding: 8 }}>
